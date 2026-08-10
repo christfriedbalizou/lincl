@@ -5,7 +5,7 @@ import shutil
 import subprocess
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Callable, Generic, TypeAlias, TypeVar
+from typing import Any, Callable, Generic, TypeAlias, TypeVar, overload
 
 from lincl.exceptions import (
     CommandExecutionError,
@@ -99,11 +99,30 @@ class Command(Generic[Output]):
     executable: str
     parser: Callable[[str], Output]
 
+    @overload
     def __call__(
         self,
         *arguments: ScalarArgument,
+        parser: None = None,
         **options: OptionValue,
-    ) -> CommandResult[Output]:
+    ) -> CommandResult[Output]: ...
+
+    @overload
+    def __call__(
+        self,
+        *arguments: ScalarArgument,
+        parser: Callable[[str], ParsedOutput],
+        **options: OptionValue,
+    ) -> CommandResult[ParsedOutput]: ...
+
+    def __call__(
+        self,
+        *arguments: ScalarArgument,
+        parser: Callable[[str], Any] | None = None,
+        **options: OptionValue,
+    ) -> CommandResult[Any]:
+        if parser is not None:
+            return self.with_parser(parser).run(*arguments, options=options)
         return self.run(*arguments, options=options)
 
     def run(

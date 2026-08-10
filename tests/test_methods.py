@@ -143,6 +143,39 @@ def test_with_parser_returns_typed_value_and_keeps_raw_output(python_command):
     assert python_command("-c", "print('raw')").value == "raw\n"
 
 
+def test_per_call_parser_returns_value_proxy_with_metadata(python_command):
+    entries = python_command(
+        "-c",
+        "print('a.txt'); print('b.txt')",
+        parser=str.splitlines,
+    )
+
+    assert isinstance(entries, list) is False
+    assert isinstance(entries.value, list) is True
+    assert list(entries) == ["a.txt", "b.txt"]
+    assert entries[0] == "a.txt"
+    assert "b.txt" in entries
+    assert len(entries) == 2
+    assert entries == ["a.txt", "b.txt"]
+    assert entries.returncode == 0
+
+
+def test_mutation_and_addition_preserve_result_metadata(python_command):
+    entries = python_command(
+        "-c",
+        "print('a.txt'); print('b.txt')",
+        parser=str.splitlines,
+    )
+
+    entries.append("c.txt")
+    extended = entries + ["d.txt"]
+
+    assert entries.value == ["a.txt", "b.txt", "c.txt"]
+    assert extended.value == ["a.txt", "b.txt", "c.txt", "d.txt"]
+    assert extended.returncode == 0
+    assert extended.stdout == "a.txt\nb.txt\n"
+
+
 def test_parser_failure_preserves_raw_result(python_command):
     parsed_command = python_command.with_parser(int)
 

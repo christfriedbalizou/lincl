@@ -104,19 +104,36 @@ Every successful call returns an immutable ``CommandResult`` with ``args``,
 ``returncode``, ``stdout``, ``stderr``, and ``value``. By default, ``value`` is
 the unchanged stdout string.
 
-Use ``with_parser()`` to create an immutable command configured for a specific
-output format:
+Pass ``parser=`` for one call, or use ``with_parser()`` to create a reusable
+command configured for a specific output format:
 
 .. code-block:: python
 
    from lincl import ls
 
-   list_entries = ls.with_parser(str.splitlines)
-   result = list_entries()
-   for line in result.value:
+   entries = ls("./", parser=str.splitlines)
+   entries.append("another-entry")
+   entries = entries + ["one-more-entry"]
+
+   for line in entries:
        print(line)
 
-The original text remains available as ``result.stdout`` even after parsing.
+   assert entries.returncode == 0
+
+``CommandResult`` forwards common value operations, indexing, iteration, and
+attribute access to its parsed value. Operators such as ``+`` return another
+result carrying the same process metadata. The original text remains available
+as ``entries.stdout`` even if the parsed list is later changed.
+
+The result behaves like its value but is not an instance of the value's type.
+Use the explicit ``value`` attribute when an API or type check requires the
+concrete object:
+
+.. code-block:: python
+
+   assert not isinstance(entries, list)
+   assert isinstance(entries.value, list)
+
 A parser receives stdout only and runs only after the command exits
 successfully. If parsing fails, ``OutputParseError`` retains the textual result
 on ``error.result`` and chains the parser's exception as its cause.
@@ -133,7 +150,9 @@ instead of relying on command-name magic:
 
    from lincl import wc
 
-   parse_count = lambda output: int(output.split()[0])
+   def parse_count(output):
+       return int(output.split()[0])
+
    count_words = wc.with_parser(parse_count)
    word_count = count_words("-w", "README.rst").value
 
@@ -189,6 +208,10 @@ need process controls. ``env`` replaces the child environment, matching
 only a few variables. Output is decoded as UTF-8 with ``surrogateescape`` by
 default so unexpected bytes can be round-tripped. Both settings are
 configurable.
+
+The ``parser`` keyword is reserved for output parsing. A program that genuinely
+needs a ``--parser`` command-line option can receive it through
+``run(options={"parser": ...})``.
 
 Project status
 --------------
