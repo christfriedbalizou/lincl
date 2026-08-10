@@ -1,0 +1,58 @@
+name: Release Please auto-merge
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  merge-release:
+    name: Merge release after successful checks
+    if: >-
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ secrets.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+      - name: Find Release Please pull request
+        id: pull-request
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          pull_request="$(gh api \
+            "repos/${GITHUB_REPOSITORY}/commits/${HEAD_SHA}/pulls" \
+            --jq 'map(select(
+              .state == "open" and
+              any(.labels[]; .name == "autorelease: pending")
+            )) | first | [.html_url, .head.sha] | @tsv')"
+          IFS=$'\t' read -r pull_request_url pull_request_head <<< \
+            "${pull_request}"
+          test -n "${pull_request_url}"
+          test -n "${pull_request_head}"
+          echo "url=${pull_request_url}" >> "${GITHUB_OUTPUT}"
+          echo "head=${pull_request_head}" >> "${GITHUB_OUTPUT}"
+      - name: Wait for remaining checks
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          PULL_REQUEST_URL: ${{ steps.pull-request.outputs.url }}
+        run: gh pr checks --watch --fail-fast "${PULL_REQUEST_URL}"
+      - name: Squash and merge release
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          HEAD_SHA: ${{ steps.pull-request.outputs.head }}
+          PULL_REQUEST_URL: ${{ steps.pull-request.outputs.url }}
+        run: >-
+          gh pr merge --squash --match-head-commit "${HEAD_SHA}"
+          "${PULL_REQUEST_URL}"

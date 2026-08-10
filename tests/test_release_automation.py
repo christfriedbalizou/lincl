@@ -31,3 +31,16 @@ def test_release_automation_watches_package_inputs():
     assert "setup.cfg" in workflow
     assert "BOT_APP_PRIVATE_KEY" in workflow
     assert "googleapis/release-please-action@" in workflow
+
+
+def test_release_pull_request_merges_only_after_successful_checks():
+    workflow = (
+        ROOT / ".github/workflows/release-please-automerge.yml"
+    ).read_text()
+
+    assert "github.event.workflow_run.event == 'pull_request'" in workflow
+    assert "github.event.workflow_run.conclusion == 'success'" in workflow
+    assert 'any(.labels[]; .name == "autorelease: pending")' in workflow
+    assert "gh pr checks --watch --fail-fast" in workflow
+    assert 'gh pr merge --squash --match-head-commit "${HEAD_SHA}"' in workflow
+    assert "--admin" not in workflow
