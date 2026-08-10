@@ -1,30 +1,42 @@
-"""
-File: test_imports.py
-Author: Christfried Balizou
-Email: christfriedbalizou@gmail.com
-Github: https://github.com/ChristfriedBalizou
-Description: Test dynamic imports
-"""
+import shutil
 
 import pytest
 
-
-def test_script_not_found():
-    # Try importing a command which does not exist
-    # should raise and ImportError
-    with pytest.raises(ImportError, match="Script for foobar not found."):
-        from lincl import foobar  # noqa: F401
+import lincl
+from lincl import Command, CommandNotFoundError
 
 
-def test_script_found():
-    # Check import of an existing script works
+def test_missing_dynamic_command_raises_typed_import_error(capsys):
+    command_name = "lincl-command-that-does-not-exist"
+
+    with pytest.raises(CommandNotFoundError, match=command_name):
+        getattr(lincl, command_name)
+
+    assert capsys.readouterr() == ("", "")
+
+
+def test_installed_command_is_resolved_once():
+    executable = shutil.which("ls")
+    assert executable is not None
+
     from lincl import ls
 
+    assert isinstance(ls, Command)
+    assert ls.executable == executable
     assert callable(ls)
 
 
-def test_script_found_with_alias():
-    # Try to use alias "as"
+def test_dynamic_command_can_be_aliased():
     from lincl import cp as copy
 
-    assert callable(copy)
+    assert isinstance(copy, Command)
+
+
+def test_private_attributes_follow_normal_module_semantics():
+    with pytest.raises(AttributeError, match="has no attribute"):
+        getattr(lincl, "_missing")
+
+
+def test_dir_contains_stable_public_api():
+    assert "CommandResult" in dir(lincl)
+    assert "command" in dir(lincl)

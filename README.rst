@@ -13,11 +13,13 @@ your machine into Python callables:
 
    from lincl import cp
 
-   stdout, stderr = cp(
+   result = cp(
        "notes.txt",
        "notes.backup.txt",
        preserve="mode,timestamps",
    )
+
+   assert result.returncode == 0
 
 That call runs the equivalent of:
 
@@ -44,10 +46,11 @@ Import a command by name and call it like a function:
 
    from lincl import echo
 
-   stdout, stderr = echo("Hello from lincl")
+   result = echo("Hello from lincl")
 
-   assert stdout == "Hello from lincl\n"
-   assert stderr == ""
+   assert result.stdout == "Hello from lincl\n"
+   assert result.stderr == ""
+   assert result.lines == ["Hello from lincl"]
 
 You can also resolve a command at runtime:
 
@@ -56,7 +59,8 @@ You can also resolve a command at runtime:
    from lincl import command
 
    git = command("git")
-   stdout, stderr = git("version")
+   result = git("version")
+   print(result.stdout, end="")
 
 How arguments are translated
 ----------------------------
@@ -67,8 +71,13 @@ options and are placed before them:
 - ``v=True`` becomes ``-v``.
 - ``recursive=True`` becomes ``--recursive``.
 - ``show_tabs=True`` becomes ``--show-tabs``.
+- ``color=False`` and ``color=None`` are omitted.
 - ``output="report.txt"`` becomes ``--output=report.txt``.
 - ``include=["curl", "git"]`` becomes ``--include=curl,git``.
+
+Text, numbers, and text-based ``pathlib.Path`` values are accepted as
+arguments. Boolean positional arguments, bytes, and other ambiguous values are
+rejected before the process starts.
 
 For example:
 
@@ -76,7 +85,7 @@ For example:
 
    from lincl import debootstrap
 
-   stdout, stderr = debootstrap(
+   result = debootstrap(
        "stable",
        "/srv/chroot",
        variant="buildd",
@@ -89,33 +98,100 @@ This produces:
 
    debootstrap --variant=buildd --include=ca-certificates,curl stable /srv/chroot
 
-Successful commands return ``(stdout, stderr)`` as text. If a command exits
-with a non-zero status, ``lincl`` raises ``RuntimeError`` with the command and
-captured standard error. Importing a command that is not installed raises
-``ImportError``.
+Working with results
+--------------------
+
+Every successful call returns an immutable ``CommandResult`` with ``args``,
+``returncode``, ``stdout``, and ``stderr``. Its ``lines`` property is a handy
+view for line-oriented output:
+
+.. code-block:: python
+
+   from lincl import ls
+
+   result = ls()
+   for line in result.lines:
+       print(line)
+
+``lines`` splits display output; it does not understand the command's data
+format. In particular, Unix filenames may contain newlines. Use
+``pathlib.Path.iterdir()`` when you need actual directory entries, and parse a
+command's machine-readable format when correctness depends on its structure.
+
+For a numeric command such as ``wc``, convert the documented output explicitly
+instead of relying on command-name magic:
+
+.. code-block:: python
+
+   from lincl import wc
+
+   word_count = int(wc("-w", "README.rst").stdout.split()[0])
+
+Failures you can catch
+----------------------
+
+All library errors inherit from ``CommandError``. A non-zero exit raises
+``CommandExecutionError`` and keeps the complete ``CommandResult`` on
+``error.result``:
+
+.. code-block:: python
+
+   from lincl import CommandExecutionError, grep
+
+   try:
+       result = grep("needle", "missing.txt")
+   except CommandExecutionError as error:
+       print(f"exit status: {error.returncode}")
+       print(error.stderr, end="")
+
+``CommandNotFoundError`` is also an ``ImportError`` for compatibility with
+normal imports. ``CommandLaunchError`` reports operating-system failures that
+happen while starting a resolved executable. ``CommandTimeoutError`` includes
+the deadline and any output captured before termination. Exception messages
+describe the executable without repeating command arguments, which may contain
+secrets. Their structured attributes are intended for program logic; handle
+those values and captured stderr with the same care as the original input.
+
+Process controls
+----------------
+
+Timeouts, input, environments, working directories, and decoding belong to an
+``ExecutionOptions`` value. They are deliberately separate from the keyword
+arguments translated into command-line options:
+
+.. code-block:: python
+
+   from lincl import ExecutionOptions, command
+
+   python = command("python3")
+   result = python.run(
+       "-c",
+       "import os, sys; print(os.getcwd(), sys.stdin.read())",
+       execution=ExecutionOptions(
+           timeout=5,
+           cwd="/tmp",
+           input="hello",
+       ),
+   )
+
+Pass command options to the explicit API with ``options={...}`` when you also
+need process controls. ``env`` replaces the child environment, matching
+``subprocess.run``; copy ``os.environ`` first when you want to add or override
+only a few variables. Output is decoded as UTF-8 with ``surrogateescape`` by
+default so unexpected bytes can be round-tripped. Both settings are
+configurable.
 
 Project status
 --------------
 
-``lincl`` is small and usable, but its execution API is still evolving. Before
-using it in production or with untrusted input, keep these current limitations
-in mind:
+``lincl`` is small and usable, but its execution API is still evolving. It
+captures stdout and stderr in memory, so it is not yet suitable for unbounded
+or streaming output. Lists are comma-separated; repeated options and commands
+that expect one flag followed by several values require positional arguments.
+Bytes mode and cancellation do not have public APIs yet.
 
-- ``False`` still emits a boolean option. Omit the keyword when you do not want
-  the flag.
-- Lists are comma-separated. Repeated options and space-separated list formats
-  are not supported yet.
-- Arguments must be strings where required by ``subprocess``. Convert numbers
-  and ``pathlib.Path`` objects before passing them.
-- Output is captured in memory and decoded as text. Streaming and bytes modes
-  do not have public APIs yet.
-- Timeouts, cancellation, input, environment overrides, and working-directory
-  controls do not have public APIs yet.
-- Execution failures use ``RuntimeError`` rather than a structured exception.
-- Importing a missing command prints a diagnostic before raising
-  ``ImportError``.
-- ``from lincl import *`` is intentionally unsupported because the available
-  commands depend on the host system.
+``from lincl import *`` imports the stable Python API, not every executable on
+the host. Import commands by name or resolve them with ``command()``.
 
 Command behavior also varies between distributions and command versions.
 ``lincl`` wraps what is installed; it does not install commands, emulate them,
