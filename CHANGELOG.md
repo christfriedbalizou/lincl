@@ -1,5 +1,13 @@
 # Changelog
 
+## [4.0.2](https://github.com/christfriedbalizou/lincl/compare/v4.0.1...v4.0.2) (2026-08-10)
+
+
+### Documentation
+
+* convert README to Markdown ([8f37c43](https://github.com/christfriedbalizou/lincl/commit/8f37c437da12fde8f93ec3f388c587686b2a1890))
+* restructure README sections ([0d55c9a](https://github.com/christfriedbalizou/lincl/commit/0d55c9a08f96ff3081bf351607e8aa1a4c84e204))
+
 ## [4.0.1](https://github.com/christfriedbalizou/lincl/compare/v4.0.0...v4.0.1) (2026-08-10)
 
 
