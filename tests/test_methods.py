@@ -144,8 +144,8 @@ def test_configure_returns_typed_value_and_keeps_raw_output(python_command):
 
 
 def test_per_call_parser_returns_value_proxy_with_metadata(python_command):
-    entries = python_command("-c", "print('a.txt'); print('b.txt')").parse(
-        parser=str.splitlines
+    entries = python_command("-c", "print('a.txt'); print('b.txt')").parser(
+        str.splitlines
     )
 
     assert isinstance(entries, list) is False
@@ -159,8 +159,8 @@ def test_per_call_parser_returns_value_proxy_with_metadata(python_command):
 
 
 def test_mutation_and_addition_preserve_result_metadata(python_command):
-    entries = python_command("-c", "print('a.txt'); print('b.txt')").parse(
-        parser=str.splitlines
+    entries = python_command("-c", "print('a.txt'); print('b.txt')").parser(
+        str.splitlines
     )
 
     entries.append("c.txt")
@@ -176,7 +176,7 @@ def test_parser_failure_preserves_raw_result(python_command):
     result = python_command("-c", "print('not-an-integer')")
 
     with pytest.raises(OutputParseError) as raised:
-        result.parse(parser=int)
+        result.parser(int)
 
     assert raised.value.result.stdout == "not-an-integer\n"
     assert raised.value.result.value == "not-an-integer\n"
@@ -206,9 +206,9 @@ def test_parser_configuration_rejects_non_callable(python_command):
 
     result = python_command("-c", "print('raw')")
     with pytest.raises(TypeError, match="parser must be callable"):
-        result.parse(parser=None)
-    with pytest.raises(TypeError, match="positional argument"):
-        result.parse(str.splitlines)
+        result.parser(None)
+    with pytest.raises(TypeError, match="positional-only"):
+        result.parser(parser=str.splitlines)
 
 
 @pytest.mark.parametrize(

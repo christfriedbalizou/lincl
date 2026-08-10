@@ -126,13 +126,13 @@ Every successful call returns an immutable ``CommandResult`` with ``args``,
 ``returncode``, ``stdout``, ``stderr``, and ``value``. By default, ``value`` is
 the unchanged stdout string.
 
-Call ``parse()`` on one result to transform that call's captured stdout:
+Call ``parser()`` on one result to transform that call's captured stdout:
 
 .. code-block:: python
 
    from lincl import ls
 
-   entries = ls("./").parse(parser=str.splitlines)
+   entries = ls("./").parser(str.splitlines)
    entries.append("another-entry")
    entries = entries + ["one-more-entry"]
 

@@ -66,8 +66,8 @@ unchanged stdout string.
 
 The result behaves like its parsed value and also exposes `args`, `returncode`,
 `stdout`, and `stderr`. Use `.value` when the concrete parsed type is required.
-Use `result.parse(parser=...)` for one result, or
-`command.configure(parser=...)` to create a reusable parsed command.
+Use `result.parser(callable)` for one result, or `command.configure(parser=...)`
+to create a reusable parsed command.
 Use `.run(..., execution=ExecutionOptions(...))` for timeouts, input,
 environment variables, working directories, and decoding controls. Project
 defaults for encoding, decoding errors, and timeout can be set in

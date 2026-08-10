@@ -43,6 +43,8 @@ def test_dynamic_command_has_pythonic_help():
     assert "function ls in module lincl" in documentation
     assert "ls(*arguments, **options)" in documentation
     assert "CommandResult" in documentation
+    assert "result.parser(callable)" in documentation
+    assert "result.parse(" not in documentation
     assert "System manual:" in documentation
     assert "class Command" not in documentation
 
