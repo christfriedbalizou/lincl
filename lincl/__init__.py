@@ -9,6 +9,7 @@ from lincl.exceptions import (
     CommandLaunchError,
     CommandNotFoundError,
     CommandTimeoutError,
+    ConfigurationError,
     OutputParseError,
 )
 from lincl.models import CommandResult, ExecutionOptions
@@ -26,6 +27,7 @@ __all__ = [
     "CommandResult",
     "CommandTimeoutError",
     "CommandCallable",
+    "ConfigurationError",
     "ExecutionOptions",
     "OutputParseError",
     "transcribe",

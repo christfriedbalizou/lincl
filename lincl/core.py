@@ -17,6 +17,7 @@ from typing import (
     overload,
 )
 
+from lincl.configuration import load_execution_options
 from lincl.documentation import command_doc
 from lincl.exceptions import (
     CommandExecutionError,
@@ -173,7 +174,7 @@ class Command(Generic[Output]):
         execution: ExecutionOptions | None = None,
     ) -> CommandResult[Output]:
         """Run with explicit command options and process controls."""
-        process_options = execution or ExecutionOptions()
+        process_options = execution or load_execution_options()
         command_options = dict(options or {})
         args = (
             self.executable,

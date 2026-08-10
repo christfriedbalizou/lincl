@@ -67,7 +67,9 @@ the default value is the unchanged string.
 The result behaves like its parsed value and also exposes `args`, `returncode`,
 `stdout`, and `stderr`. Use `.value` when the concrete parsed type is required.
 Use `.run(..., execution=ExecutionOptions(...))` for timeouts, input,
-environment variables, working directories, and decoding controls.
+environment variables, working directories, and decoding controls. Project
+defaults for encoding, decoding errors, and timeout can be set in
+`[tool.lincl]` in `pyproject.toml`.
 
 Executable:
     {executable}

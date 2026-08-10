@@ -235,6 +235,39 @@ The ``parser`` keyword is reserved for output parsing. A program that genuinely
 needs a ``--parser`` command-line option can receive it through
 ``run(options={"parser": ...})``.
 
+Project defaults
+----------------
+
+Safe execution defaults can be stored in the nearest project configuration
+file. For new projects, use the standard tool table in ``pyproject.toml``:
+
+.. code-block:: toml
+
+   [tool.lincl]
+   encoding = "utf-8"
+   errors = "surrogateescape"
+   timeout = 1
+
+``setup.cfg`` and ``tox.ini`` are also supported for established projects:
+
+.. code-block:: ini
+
+   [lincl]
+   encoding = utf-8
+   errors = surrogateescape
+   timeout = 1
+
+``lincl`` searches the current directory and then its parents. The nearest
+configuration wins; within one directory, precedence is ``pyproject.toml``,
+``setup.cfg``, then ``tox.ini``. An explicitly supplied ``ExecutionOptions``
+replaces project defaults for that call.
+
+Only ``encoding``, ``errors``, and ``timeout`` are configurable. Working
+directories, environments, and input are request-specific and remain explicit.
+Output capture, exit checking, and ``shell=False`` are safety and result-model
+invariants and cannot be weakened by project configuration. Unknown or invalid
+settings raise ``ConfigurationError`` with the source path.
+
 Project status
 --------------
 

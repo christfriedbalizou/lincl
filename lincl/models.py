@@ -1,5 +1,7 @@
 """Structured command execution values."""
 
+import codecs
+import math
 import os
 from dataclasses import dataclass
 from typing import Any, Generic, Iterator, Mapping, TypeVar, cast
@@ -87,9 +89,24 @@ class ExecutionOptions:
     errors: str = "surrogateescape"
 
     def __post_init__(self) -> None:
-        if self.timeout is not None and self.timeout <= 0:
-            raise ValueError("timeout must be greater than zero")
+        if self.timeout is not None:
+            if isinstance(self.timeout, bool) or not isinstance(
+                self.timeout, (int, float)
+            ):
+                raise TypeError("timeout must be a number or None")
+            if not math.isfinite(self.timeout) or self.timeout <= 0:
+                raise ValueError("timeout must be a finite positive number")
         if not self.encoding:
             raise ValueError("encoding must not be empty")
         if not self.errors:
             raise ValueError("errors must not be empty")
+        try:
+            codecs.lookup(self.encoding)
+        except LookupError as error:
+            raise ValueError(f"unknown encoding: {self.encoding}") from error
+        try:
+            codecs.lookup_error(self.errors)
+        except LookupError as error:
+            raise ValueError(
+                f"unknown encoding error handler: {self.errors}"
+            ) from error

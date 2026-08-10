@@ -1,6 +1,7 @@
 """Exceptions raised by command discovery and execution."""
 
 import shlex
+from pathlib import Path
 
 from lincl.models import CommandResult
 
@@ -16,6 +17,15 @@ def _render_command(args: tuple[str, ...]) -> str:
 
 class CommandError(Exception):
     """Base class for errors reported by lincl."""
+
+
+class ConfigurationError(CommandError):
+    """Raised when project execution defaults are invalid."""
+
+    def __init__(self, path: Path, reason: str) -> None:
+        self.path = path
+        self.reason = reason
+        super().__init__(f"Invalid lincl configuration in {path}: {reason}")
 
 
 class CommandNotFoundError(CommandError, ImportError):

@@ -240,5 +240,5 @@ def test_transcribe_rejects_ambiguous_values(
 
 
 def test_execution_options_reject_invalid_timeout():
-    with pytest.raises(ValueError, match="greater than zero"):
+    with pytest.raises(ValueError, match="finite positive number"):
         ExecutionOptions(timeout=0)

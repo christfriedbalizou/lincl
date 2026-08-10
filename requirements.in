@@ -1,1 +1,1 @@
-# lincl has no third-party runtime dependencies.
+tomli==2.4.1; python_version < "3.11"
