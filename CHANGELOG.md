@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/christfriedbalizou/lincl/compare/v1.1.0...v1.1.1) (2026-08-10)
+
+
+### Bug Fixes
+
+* hide internal command type ([6adcce5](https://github.com/christfriedbalizou/lincl/commit/6adcce5b1619183a66f9690fcef7e421326f3bcd))
+
 ## [1.1.0](https://github.com/christfriedbalizou/lincl/compare/1.0.3...v1.1.0) (2026-08-10)
 
 
