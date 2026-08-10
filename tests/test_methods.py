@@ -132,8 +132,8 @@ def test_launch_error_is_typed(python_command):
     assert isinstance(raised.value.reason, OSError)
 
 
-def test_with_parser_returns_typed_value_and_keeps_raw_output(python_command):
-    parsed_command = python_command.with_parser(parser=str.splitlines)
+def test_configure_returns_typed_value_and_keeps_raw_output(python_command):
+    parsed_command = python_command.configure(parser=str.splitlines)
 
     result = parsed_command("-c", "print('first'); print('second')")
 
@@ -144,9 +144,9 @@ def test_with_parser_returns_typed_value_and_keeps_raw_output(python_command):
 
 
 def test_per_call_parser_returns_value_proxy_with_metadata(python_command):
-    entries = python_command(
-        "-c", "print('a.txt'); print('b.txt')"
-    ).with_parser(parser=str.splitlines)
+    entries = python_command("-c", "print('a.txt'); print('b.txt')").parse(
+        str.splitlines
+    )
 
     assert isinstance(entries, list) is False
     assert isinstance(entries.value, list) is True
@@ -159,9 +159,9 @@ def test_per_call_parser_returns_value_proxy_with_metadata(python_command):
 
 
 def test_mutation_and_addition_preserve_result_metadata(python_command):
-    entries = python_command(
-        "-c", "print('a.txt'); print('b.txt')"
-    ).with_parser(parser=str.splitlines)
+    entries = python_command("-c", "print('a.txt'); print('b.txt')").parse(
+        str.splitlines
+    )
 
     entries.append("c.txt")
     extended = entries + ["d.txt"]
@@ -176,7 +176,7 @@ def test_parser_failure_preserves_raw_result(python_command):
     result = python_command("-c", "print('not-an-integer')")
 
     with pytest.raises(OutputParseError) as raised:
-        result.with_parser(parser=int)
+        result.parse(int)
 
     assert raised.value.result.stdout == "not-an-integer\n"
     assert raised.value.result.value == "not-an-integer\n"
@@ -192,7 +192,7 @@ def test_parser_does_not_run_for_failed_command(python_command):
         parser_called = True
         return output
 
-    parsed_command = python_command.with_parser(parser=parser)
+    parsed_command = python_command.configure(parser=parser)
 
     with pytest.raises(CommandExecutionError):
         parsed_command("-c", "raise SystemExit(2)")
@@ -200,13 +200,13 @@ def test_parser_does_not_run_for_failed_command(python_command):
     assert parser_called is False
 
 
-def test_with_parser_rejects_non_callable(python_command):
+def test_parser_configuration_rejects_non_callable(python_command):
     with pytest.raises(TypeError, match="parser must be callable"):
-        python_command.with_parser(parser=None)
+        python_command.configure(parser=None)
 
     result = python_command("-c", "print('raw')")
     with pytest.raises(TypeError, match="parser must be callable"):
-        result.with_parser(parser=None)
+        result.parse(None)
 
 
 @pytest.mark.parametrize(

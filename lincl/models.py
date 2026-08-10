@@ -73,9 +73,8 @@ class CommandResult(Generic[Output]):
             value=value,
         )
 
-    def with_parser(
+    def parse(
         self,
-        *,
         parser: Callable[[str], ParsedOutput],
     ) -> "CommandResult[ParsedOutput]":
         if not callable(parser):

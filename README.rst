@@ -126,13 +126,13 @@ Every successful call returns an immutable ``CommandResult`` with ``args``,
 ``returncode``, ``stdout``, ``stderr``, and ``value``. By default, ``value`` is
 the unchanged stdout string.
 
-Call ``with_parser()`` on one result to parse that call's captured stdout:
+Call ``parse()`` on one result to transform that call's captured stdout:
 
 .. code-block:: python
 
    from lincl import ls
 
-   entries = ls("./").with_parser(parser=str.splitlines)
+   entries = ls("./").parse(str.splitlines)
    entries.append("another-entry")
    entries = entries + ["one-more-entry"]
 
@@ -164,7 +164,7 @@ the original remains unchanged and safe for concurrent callers:
 
 .. code-block:: python
 
-   parsed_ls = ls.with_parser(parser=str.splitlines)
+   parsed_ls = ls.configure(parser=str.splitlines)
    entries = parsed_ls("./")
 
 Reassignment is also valid when every following call in the current scope
@@ -172,7 +172,7 @@ should use that parser:
 
 .. code-block:: python
 
-   ls = ls.with_parser(parser=str.splitlines)
+   ls = ls.configure(parser=str.splitlines)
    entries = ls("./")
 
 ``str.splitlines`` only splits display output; it does not understand the
@@ -190,7 +190,7 @@ instead of relying on command-name magic:
    def parse_count(output):
        return int(output.split()[0])
 
-   count_words = wc.with_parser(parser=parse_count)
+   count_words = wc.configure(parser=parse_count)
    word_count = count_words("-w", "README.rst").value
 
 Failures you can catch

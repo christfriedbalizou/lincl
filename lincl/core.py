@@ -56,7 +56,7 @@ class CommandCallable(Protocol[Output]):
         execution: ExecutionOptions | None = None,
     ) -> CommandResult[Output]: ...
 
-    def with_parser(
+    def configure(
         self,
         *,
         parser: Callable[[str], ParsedOutput],
@@ -210,7 +210,7 @@ class Command(Generic[Output]):
             value=value,
         )
 
-    def with_parser(
+    def configure(
         self,
         *,
         parser: Callable[[str], ParsedOutput],
@@ -240,13 +240,13 @@ def _as_callable(
     ) -> CommandResult[Output]:
         return resolved(*arguments, **options)
 
-    def with_parser(
+    def configure(
         *,
         parser: Callable[[str], ParsedOutput],
     ) -> CommandCallable[ParsedOutput]:
         return _as_callable(
             command_name,
-            resolved.with_parser(parser=parser),
+            resolved.configure(parser=parser),
         )
 
     program.__name__ = command_name
@@ -255,7 +255,7 @@ def _as_callable(
     program.__doc__ = command_doc(command_name, resolved.executable)
     setattr(program, "__signature__", _HELP_SIGNATURE)
     setattr(program, "run", resolved.run)
-    setattr(program, "with_parser", with_parser)
+    setattr(program, "configure", configure)
     setattr(program, "executable", resolved.executable)
     return cast(CommandCallable[Output], program)
 
