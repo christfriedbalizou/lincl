@@ -18,10 +18,6 @@ build==1.5.0 \
     # via
     #   -r requirements-dev.in
     #   pip-tools
-bump2version==1.0.1 \
-    --hash=sha256:37f927ea17cde7ae2d7baf832f8e80ce3777624554a653006c9144f8017fe410 \
-    --hash=sha256:762cb2bfad61f4ec8e2bdf452c7c267416f8c70dd9ecb1653fd0bbb01fa936e6
-    # via -r requirements-dev.in
 cachecontrol[filecache]==0.14.4 \
     --hash=sha256:b7ac014ff72ee199b5f8af1de29d60239954f223e948196fa3d84adaffc71d2b \
     --hash=sha256:e6220afafa4c22a47dd0badb319f84475d79108100d04e26e8542ef7d3ab05a1

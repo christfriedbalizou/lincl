@@ -169,9 +169,9 @@ is complete while they or tests are red.
 
 ## Versioning, CI, and releases
 
-- Use `bumpversion`/`bump2version` from checked-in configuration so patch,
-  minor, and major releases update the canonical `__version__`, packaging
-  metadata where needed, and release tag consistently.
+- Treat Git history and Release Please as the source of truth for versions.
+  Use Conventional Commits so release pull requests update the canonical
+  `__version__`, changelog, release tag, and packaging metadata consistently.
 - A release pipeline must test the exact commit and version, build sdist and
   wheel with the standards-based build frontend, inspect artifacts, install
   and smoke-test both artifacts, and publish only immutable successful
