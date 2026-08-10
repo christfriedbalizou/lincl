@@ -1,5 +1,19 @@
 # Changelog
 
+## [4.0.1](https://github.com/christfriedbalizou/lincl/compare/v4.0.0...v4.0.1) (2026-08-10)
+
+
+### Bug Fixes
+
+* publish README updates to PyPI ([322496a](https://github.com/christfriedbalizou/lincl/commit/322496ac60fc066897afefc1197ecd3d8ce7e006))
+
+
+### Documentation
+
+* compare automation code side by side ([5518f6b](https://github.com/christfriedbalizou/lincl/commit/5518f6b53c3b6b6d3865fe18ad8ca7f18682d22d))
+* move detailed example to appendix ([ce752de](https://github.com/christfriedbalizou/lincl/commit/ce752deab2a3aa3778601f5861e7fd0fc1cb3ef0))
+* remove redundant comparison table ([7e6131b](https://github.com/christfriedbalizou/lincl/commit/7e6131bddd5c3240239ce8934dc987df5def9883))
+
 ## [4.0.0](https://github.com/christfriedbalizou/lincl/compare/v3.0.0...v4.0.0) (2026-08-10)
 
 
