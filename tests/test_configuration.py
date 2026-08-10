@@ -78,10 +78,8 @@ def test_explicit_execution_options_replace_project_defaults(
     monkeypatch.chdir(tmp_path)
     python = _resolve_command(sys.executable)
 
-    result = python.run(
-        "-c",
-        "print('finished')",
-        execution=ExecutionOptions(timeout=1),
+    result = python._with_execution(ExecutionOptions(timeout=1))(
+        "-c", "print('finished')"
     )
 
     assert result.stdout == "finished\n"

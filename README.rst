@@ -72,7 +72,8 @@ the selected subcommand, where tools such as Git expect them:
 
 That call runs ``git clone --depth=1 REPOSITORY_URL DESTINATION``. Use the
 explicit ``git.subcommand("clone")`` form when a subcommand conflicts with a
-``lincl`` API attribute such as ``run``, ``configure``, or ``executable``.
+``lincl`` API attribute such as ``configure`` or ``executable``. ``run`` is not
+reserved: ``docker.run(...)`` executes the real Docker ``run`` subcommand.
 
 Python help, backed by the system manual
 ----------------------------------------
@@ -242,14 +243,16 @@ arguments translated into command-line options:
 
    from lincl import ExecutionOptions, python3
 
-   result = python3.run(
-       "-c",
-       "import os, sys; print(os.getcwd(), sys.stdin.read())",
+   configured_python = python3.configure(
        execution=ExecutionOptions(
            timeout=5,
            cwd="/tmp",
            input="hello",
        ),
+   )
+   result = configured_python(
+       "-c",
+       "import os, sys; print(os.getcwd(), sys.stdin.read())",
    )
 
 Pass command options to the explicit API with ``options={...}`` when you also

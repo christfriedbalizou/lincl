@@ -9,10 +9,12 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from inspect import Parameter, Signature
 from typing import (
+    Any,
     Callable,
     Generic,
     TypeAlias,
     TypeVar,
+    overload,
 )
 
 from lincl.configuration import load_execution_options
@@ -32,6 +34,13 @@ OptionValue: TypeAlias = (
 )
 Output = TypeVar("Output")
 ParsedOutput = TypeVar("ParsedOutput")
+
+
+class _UnsetType:
+    __slots__ = ()
+
+
+_UNSET = _UnsetType()
 _HELP_SIGNATURE = Signature(
     parameters=(
         Parameter("arguments", Parameter.VAR_POSITIONAL),
@@ -115,22 +124,21 @@ class Command(Generic[Output]):
     executable: str
     parser: Callable[[str], Output]
     prefix: tuple[str, ...] = ()
+    execution: ExecutionOptions | None = None
 
     def __call__(
         self,
         *arguments: ScalarArgument,
         **options: OptionValue,
     ) -> CommandResult[Output]:
-        return self.run(*arguments, options=options)
+        return self._execute(*arguments, options=options)
 
-    def run(
+    def _execute(
         self,
         *arguments: ScalarArgument,
         options: Mapping[str, OptionValue] | None = None,
-        execution: ExecutionOptions | None = None,
     ) -> CommandResult[Output]:
-        """Run with explicit command options and process controls."""
-        process_options = execution or load_execution_options()
+        process_options = self.execution or load_execution_options()
         command_options = dict(options or {})
         args = (
             self.executable,
@@ -189,7 +197,7 @@ class Command(Generic[Output]):
             value=value,
         )
 
-    def configure(
+    def _with_parser(
         self,
         *,
         parser: Callable[[str], ParsedOutput],
@@ -200,6 +208,20 @@ class Command(Generic[Output]):
             executable=self.executable,
             parser=parser,
             prefix=self.prefix,
+            execution=self.execution,
+        )
+
+    def _with_execution(
+        self,
+        execution: ExecutionOptions,
+    ) -> "Command[Output]":
+        if not isinstance(execution, ExecutionOptions):
+            raise TypeError("execution must be an ExecutionOptions instance")
+        return Command(
+            executable=self.executable,
+            parser=self.parser,
+            prefix=self.prefix,
+            execution=execution,
         )
 
     def subcommand(self, name: str) -> "Command[Output]":
@@ -210,6 +232,7 @@ class Command(Generic[Output]):
             executable=self.executable,
             parser=self.parser,
             prefix=(*self.prefix, rendered),
+            execution=self.execution,
         )
 
 
@@ -255,27 +278,38 @@ class CommandCallable(Generic[Output]):
     ) -> CommandResult[Output]:
         return self._resolved(*arguments, **options)
 
-    def run(
-        self,
-        *arguments: ScalarArgument,
-        options: Mapping[str, OptionValue] | None = None,
-        execution: ExecutionOptions | None = None,
-    ) -> CommandResult[Output]:
-        return self._resolved.run(
-            *arguments,
-            options=options,
-            execution=execution,
-        )
-
+    @overload
     def configure(
         self,
         *,
         parser: Callable[[str], ParsedOutput],
-    ) -> CommandCallable[ParsedOutput]:
-        return _as_callable(
-            self._command_name,
-            self._resolved.configure(parser=parser),
-        )
+        execution: ExecutionOptions | _UnsetType = _UNSET,
+    ) -> CommandCallable[ParsedOutput]: ...
+
+    @overload
+    def configure(
+        self,
+        *,
+        parser: _UnsetType = _UNSET,
+        execution: ExecutionOptions,
+    ) -> CommandCallable[Output]: ...
+
+    def configure(
+        self,
+        *,
+        parser: Callable[[str], Any] | _UnsetType = _UNSET,
+        execution: ExecutionOptions | _UnsetType = _UNSET,
+    ) -> CommandCallable[Any]:
+        if parser is _UNSET and execution is _UNSET:
+            raise TypeError("configure requires parser or execution")
+        resolved: Command[Any] = self._resolved
+        if parser is not _UNSET:
+            if not callable(parser):
+                raise TypeError("parser must be callable")
+            resolved = resolved._with_parser(parser=parser)
+        if execution is not _UNSET:
+            resolved = resolved._with_execution(execution)
+        return _as_callable(self._command_name, resolved)
 
     def subcommand(self, name: str, /) -> CommandCallable[Output]:
         return _as_callable(

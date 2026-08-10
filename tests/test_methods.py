@@ -88,10 +88,8 @@ def test_timeout_preserves_partial_output(python_command):
     execution = ExecutionOptions(timeout=0.2)
 
     with pytest.raises(CommandTimeoutError) as raised:
-        python_command.run(
-            "-c",
-            "import time; print('started', flush=True); time.sleep(5)",
-            execution=execution,
+        python_command._with_execution(execution)(
+            "-c", "import time; print('started', flush=True); time.sleep(5)"
         )
 
     assert raised.value.timeout == 0.2
@@ -108,13 +106,12 @@ def test_execution_options_support_input_cwd_and_environment(
         env={"LINCL_TEST_VALUE": "present"},
         input="hello",
     )
-    result = python_command.run(
+    result = python_command._with_execution(execution)(
         "-c",
         "import os, pathlib, sys; "
         "print(pathlib.Path.cwd()); "
         "print(os.environ['LINCL_TEST_VALUE']); "
         "print(sys.stdin.read())",
-        execution=execution,
     )
 
     assert result.stdout.splitlines() == [str(tmp_path), "present", "hello"]
@@ -132,7 +129,7 @@ def test_launch_error_is_typed(python_command):
 
 
 def test_configure_returns_typed_value_and_keeps_raw_output(python_command):
-    parsed_command = python_command.configure(parser=str.splitlines)
+    parsed_command = python_command._with_parser(parser=str.splitlines)
 
     result = parsed_command("-c", "print('first'); print('second')")
 
@@ -186,6 +183,59 @@ def test_subcommands_can_be_nested_and_configured(monkeypatch):
     assert result.value == ["one", "two"]
 
 
+def test_run_attribute_is_a_subcommand(monkeypatch):
+    from lincl import git
+
+    completed = subprocess.CompletedProcess(
+        args=(), returncode=0, stdout="", stderr=""
+    )
+    monkeypatch.setattr(subprocess, "run", lambda *args, **kwargs: completed)
+
+    direct = git.run("task", quiet=True)
+    nested = git.clone.run("task", quiet=True)
+
+    assert direct.args == (git.executable, "run", "--quiet", "task")
+    assert nested.args == (
+        git.executable,
+        "clone",
+        "run",
+        "--quiet",
+        "task",
+    )
+
+
+def test_configure_applies_explicit_execution_options(monkeypatch):
+    from lincl import git
+
+    captured = {}
+
+    def run(*args, **kwargs):
+        captured.update(kwargs)
+        return subprocess.CompletedProcess(
+            args=(), returncode=0, stdout="value\n", stderr=""
+        )
+
+    monkeypatch.setattr(subprocess, "run", run)
+
+    configured = git.configure(
+        parser=str.strip,
+        execution=ExecutionOptions(timeout=3),
+    )
+    result = configured("version")
+
+    assert captured["timeout"] == 3
+    assert result.value == "value"
+
+
+def test_configure_requires_a_supported_setting():
+    from lincl import git
+
+    with pytest.raises(TypeError, match="requires parser or execution"):
+        git.configure()
+    with pytest.raises(TypeError, match="ExecutionOptions"):
+        git.configure(execution=object())
+
+
 def test_per_call_parser_returns_value_proxy_with_metadata(python_command):
     entries = python_command("-c", "print('a.txt'); print('b.txt')").parser(
         str.splitlines
@@ -235,7 +285,7 @@ def test_parser_does_not_run_for_failed_command(python_command):
         parser_called = True
         return output
 
-    parsed_command = python_command.configure(parser=parser)
+    parsed_command = python_command._with_parser(parser=parser)
 
     with pytest.raises(CommandExecutionError):
         parsed_command("-c", "raise SystemExit(2)")
@@ -245,7 +295,7 @@ def test_parser_does_not_run_for_failed_command(python_command):
 
 def test_parser_configuration_rejects_non_callable(python_command):
     with pytest.raises(TypeError, match="parser must be callable"):
-        python_command.configure(parser=None)
+        python_command._with_parser(parser=None)
 
     result = python_command("-c", "print('raw')")
     with pytest.raises(TypeError, match="parser must be callable"):
