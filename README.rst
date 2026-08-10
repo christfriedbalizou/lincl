@@ -3,32 +3,229 @@ lincl
 
 |CI| |CodeQL| |PyPI| |Python|
 
-Linux commands, with a Python-shaped interface.
+Shell fluency, Python control.
 
-If you have ever reached for ``subprocess`` just to copy a file or ask a tool
-for its version, ``lincl`` is for you. It turns programs already installed on
-your machine into Python callables:
+``lincl`` turns the Linux programs you already know into Python callables. You
+keep familiar command names and options, while gaining Python's types, control
+flow, exceptions, and testability. There is no shell interpolation: ``lincl``
+builds an argument vector, captures output, and turns failures into structured
+exceptions.
+
+A real automation script
+------------------------
+
+Suppose a bootstrap script must work across Debian, Ubuntu, Fedora, Rocky
+Linux, and older RHEL-family systems. It needs to identify the distribution,
+select ``apt-get``, ``dnf``, or ``yum``, install Git and curl, and make a
+shallow checkout. This is a complete script, not pseudocode:
 
 .. code-block:: python
 
-   from lincl import cp
+   #!/usr/bin/env python3
+   import os
+   import platform
+   import shutil
+   from pathlib import Path
 
-   result = cp(
-       "notes.txt",
-       "notes.backup.txt",
-       preserve="mode,timestamps",
-   )
+   import lincl
 
-   assert result.returncode == 0
+   REPOSITORY = "https://github.com/example/service.git"
+   DESTINATION = Path.home() / "src" / "service"
+   REQUIRED_PACKAGES = ("git", "curl")
 
-That call runs the equivalent of:
+
+   def select_package_manager():
+       release = platform.freedesktop_os_release()
+       family = {
+           release.get("ID", ""),
+           *release.get("ID_LIKE", "").split(),
+       }
+
+       if family & {"debian", "ubuntu"}:
+           return "apt-get", {"yes": True}
+       if shutil.which("dnf"):
+           return "dnf", {"assumeyes": True}
+       if shutil.which("yum"):
+           return "yum", {"assumeyes": True}
+       raise RuntimeError(f"unsupported Linux family: {sorted(family)}")
+
+
+   manager_name, install_options = select_package_manager()
+   manager = getattr(lincl, manager_name)
+
+   if os.geteuid() != 0:
+       manager = lincl.sudo.subcommand(manager_name)
+
+   if manager_name == "apt-get":
+       manager.update()
+   manager.install(*REQUIRED_PACKAGES, **install_options)
+
+   DESTINATION.parent.mkdir(parents=True, exist_ok=True)
+   lincl.git.clone(REPOSITORY, DESTINATION, depth=1)
+
+Side by side
+~~~~~~~~~~~~
+
+The three approaches perform the same work. The difference is how much
+process machinery stays in your application code:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 18 27 27 28
+
+   * - Task
+     - lincl
+     - Bash
+     - ``subprocess``
+   * - Install packages
+     - ``manager.install(*packages, yes=True)``
+     - ``sudo apt-get install --yes "${packages[@]}"``
+     - Build and pass a complete argument list to ``subprocess.run``.
+   * - Clone
+     - ``lincl.git.clone(url, destination, depth=1)``
+     - ``git clone --depth=1 "$url" "$destination"``
+     - ``subprocess.run(["git", "clone", "--depth=1", ...])``
+   * - Branch by distribution
+     - Normal Python sets, mappings, and functions.
+     - ``case`` or compound ``[[ ... ]]`` expressions.
+     - Normal Python sets, mappings, and functions.
+   * - Failure handling
+     - Typed exceptions carrying status, stdout, and stderr.
+     - Exit codes, traps, and explicitly captured streams.
+     - ``CalledProcessError`` plus repeated capture and decoding policy.
+   * - Argument safety
+     - Argument vectors with ``shell=False``.
+     - Correct quoting and array usage are the author's responsibility.
+     - Safe with argument vectors; unsafe if callers opt into a shell.
+   * - Best fit
+     - Linux automation that benefits from Python without subprocess noise.
+     - Small, shell-native workflows.
+     - Low-level or highly customized process management.
+
+The last operations become the commands you would write by hand:
 
 .. code-block:: console
 
-   cp --preserve=mode,timestamps notes.txt notes.backup.txt
+   sudo apt-get update
+   sudo apt-get install --yes git curl
+   git clone --depth=1 https://github.com/example/service.git ~/src/service
 
-There is no shell involved. ``lincl`` builds an argument vector, starts the
-command, captures its output, and checks its exit status.
+On Fedora or Rocky Linux, the same Python script naturally emits ``dnf install
+--assumeyes git curl`` instead. If the process already runs as root, it omits
+``sudo``. A rejected package transaction or failed clone raises a typed lincl
+exception retaining the exit status, stdout, and stderr; a missing executable
+raises a specific ``CommandNotFoundError``.
+
+Why not just Bash?
+~~~~~~~~~~~~~~~~~~
+
+The equivalent Bash is compact, but distribution parsing, branching, quoting,
+and error reporting quickly become the script's responsibility:
+
+.. code-block:: bash
+
+   #!/usr/bin/env bash
+   set -euo pipefail
+
+   . /etc/os-release
+   family="${ID} ${ID_LIKE:-}"
+   prefix=()
+   if (( EUID != 0 )); then
+     prefix=(sudo)
+   fi
+
+   if [[ " ${family} " == *" debian "* ||
+         " ${family} " == *" ubuntu "* ]]; then
+     "${prefix[@]}" apt-get update
+     "${prefix[@]}" apt-get install --yes git curl
+   elif command -v dnf >/dev/null 2>&1; then
+     "${prefix[@]}" dnf install --assumeyes git curl
+   elif command -v yum >/dev/null 2>&1; then
+     "${prefix[@]}" yum install --assumeyes git curl
+   else
+     printf 'unsupported Linux family: %s\n' "${family}" >&2
+     exit 1
+   fi
+
+   mkdir -p "${HOME}/src"
+   git clone --depth=1 \
+     https://github.com/example/service.git "${HOME}/src/service"
+
+Bash remains excellent when a shell is the right abstraction. ``lincl`` earns
+its place when the workflow needs Python libraries, richer data structures,
+unit tests, concurrency, or structured recovery without wrapping every command
+in repetitive process-management code.
+
+Why not plain ``subprocess``?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The standard library is the foundation underneath lincl and is the right
+choice when you need complete low-level control. Here is the complete Python
+equivalent:
+
+.. code-block:: python
+
+   #!/usr/bin/env python3
+   import os
+   import platform
+   import shutil
+   import subprocess
+   from pathlib import Path
+
+   REPOSITORY = "https://github.com/example/service.git"
+   DESTINATION = Path.home() / "src" / "service"
+   REQUIRED_PACKAGES = ("git", "curl")
+
+
+   def execute(*arguments):
+       return subprocess.run(
+           arguments,
+           check=True,
+           capture_output=True,
+           text=True,
+       )
+
+
+   release = platform.freedesktop_os_release()
+   family = {
+       release.get("ID", ""),
+       *release.get("ID_LIKE", "").split(),
+   }
+
+   if family & {"debian", "ubuntu"}:
+       manager = "apt-get"
+       install_option = "--yes"
+   elif shutil.which("dnf"):
+       manager = "dnf"
+       install_option = "--assumeyes"
+   elif shutil.which("yum"):
+       manager = "yum"
+       install_option = "--assumeyes"
+   else:
+       raise RuntimeError(f"unsupported Linux family: {sorted(family)}")
+
+   prefix = () if os.geteuid() == 0 else ("sudo",)
+   if manager == "apt-get":
+       execute(*prefix, manager, "update")
+   execute(
+       *prefix,
+       manager,
+       "install",
+       install_option,
+       *REQUIRED_PACKAGES,
+   )
+
+   DESTINATION.parent.mkdir(parents=True, exist_ok=True)
+   execute(
+       "git",
+       "clone",
+       "--depth=1",
+       REPOSITORY,
+       str(DESTINATION),
+   )
+
+With lincl, the command structure remains visible without repeating capture,
+decoding, exit checking, and error adaptation at every call site.
 
 Quick start
 -----------
