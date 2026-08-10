@@ -53,28 +53,6 @@ the selected subcommand, where tools such as Git expect them:
 
 That call runs ``git clone --depth=1 REPOSITORY_URL DESTINATION``.
 
-Python help, backed by the system manual
-----------------------------------------
-
-Dynamic commands are callable objects with useful interactive help:
-
-.. code-block:: pycon
-
-   >>> from lincl import ls
-   >>> help(ls)
-   Help on CommandCallable in module lincl:
-
-   ls(*arguments, **options)
-       Run the installed `ls` command as a Python callable.
-       ...
-
-The help begins with the Python argument, parser, result, and process-control
-conventions, then includes the locally installed ``man`` page. Manual lookup is
-non-interactive and bounded by a short timeout. If ``man`` or the command's
-manual entry is unavailable, the Python help remains available with a clear
-fallback message. ``lincl`` reads documentation through ``man``; it never runs
-an arbitrary command with ``--help`` while importing it.
-
 How arguments are translated
 ----------------------------
 
@@ -242,6 +220,28 @@ configurable.
 
 Every keyword passed directly to a command belongs to that command. ``lincl``
 does not reserve ``parser`` or silently remove it from the argument vector.
+
+Python help, backed by the system manual
+----------------------------------------
+
+Dynamic commands are callable objects with useful interactive help:
+
+.. code-block:: pycon
+
+   >>> from lincl import ls
+   >>> help(ls)
+   Help on CommandCallable in module lincl:
+
+   ls(*arguments, **options)
+       Run the installed `ls` command as a Python callable.
+       ...
+
+The help begins with the Python argument, parser, result, and process-control
+conventions, then includes the locally installed ``man`` page. Manual lookup is
+non-interactive and bounded by a short timeout. If ``man`` or the command's
+manual entry is unavailable, the Python help remains available with a clear
+fallback message. ``lincl`` reads documentation through ``man``; it never runs
+an arbitrary command with ``--help`` while importing it.
 
 Project defaults
 ----------------
