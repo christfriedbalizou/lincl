@@ -376,7 +376,7 @@ License
 .. |CodeQL| image:: https://img.shields.io/github/actions/workflow/status/christfriedbalizou/lincl/codeql.yml?branch=main&style=for-the-badge&label=CodeQL
    :target: https://github.com/christfriedbalizou/lincl/actions/workflows/codeql.yml
    :alt: CodeQL status
-.. |PyPI| image:: https://img.shields.io/pypi/v/lincl.svg?style=for-the-badge
+.. |PyPI| image:: https://img.shields.io/pypi/v/lincl.svg?style=for-the-badge&cacheSeconds=300
    :target: https://pypi.org/project/lincl/
    :alt: PyPI version
 .. |Python| image:: https://img.shields.io/pypi/pyversions/lincl.svg?style=for-the-badge
