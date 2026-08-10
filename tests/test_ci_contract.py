@@ -20,3 +20,12 @@ def test_delivery_commands_share_the_smoke_contract():
     assert makefile.count(SMOKE_SCRIPT) == 2
     assert "output, error = echo" not in ci
     assert "output, error = echo" not in release
+
+
+def test_renovate_dispatch_uses_the_repository_app_and_tracks_the_run():
+    workflow = (ROOT / ".github/workflows/renovate.yaml").read_text()
+
+    assert "secrets.BOT_APP_ID" in workflow
+    assert "secrets.BOT_CLIENT_ID" not in workflow
+    assert '--field "distinct_id=${DISTINCT_ID}"' in workflow
+    assert 'case "${run_id}" in' in workflow
