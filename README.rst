@@ -42,45 +42,6 @@ complete script:
    print(f"Packed {len(tracked_files)} files into {bundle} ({size.value})")
    print(f"SHA-256: {checksum.value}")
 
-Side by side
-~~~~~~~~~~~~
-
-The three approaches perform the same work. The difference is how much
-process machinery stays in your application code:
-
-.. list-table::
-   :header-rows: 1
-   :widths: 18 27 27 28
-
-   * - Task
-     - lincl
-     - Bash
-     - ``subprocess``
-   * - Git subcommand
-     - ``git.archive("HEAD", format="tar", output=archive)``
-     - ``git archive --format=tar --output="$archive" HEAD``
-     - Build the complete ``["git", "archive", ...]`` argument list.
-   * - Parse output
-     - ``git.ls_files().parser(str.splitlines)``
-     - Command substitution and shell arrays.
-     - Capture, decode, check, then split ``stdout``.
-   * - Compose tools
-     - Import each command and call it directly.
-     - Invoke commands directly with careful quoting.
-     - Repeat ``subprocess.run`` policy for every command.
-   * - Failure handling
-     - Typed exceptions carrying status, stdout, and stderr.
-     - Exit codes, traps, and explicitly captured streams.
-     - ``CalledProcessError`` plus repeated capture and decoding policy.
-   * - Argument safety
-     - Argument vectors with ``shell=False``.
-     - Correct quoting and array usage are the author's responsibility.
-     - Safe with argument vectors; unsafe if callers opt into a shell.
-   * - Best fit
-     - Linux automation that benefits from Python without subprocess noise.
-     - Small, shell-native workflows.
-     - Low-level or highly customized process management.
-
 The Python reads like the commands you would write by hand:
 
 .. code-block:: console
