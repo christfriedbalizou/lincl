@@ -15,15 +15,14 @@ A real automation script
 ------------------------
 
 Suppose a bootstrap script must work across Debian, Ubuntu, Fedora, Rocky
-Linux, and older RHEL-family systems. It needs to identify the distribution,
-select ``apt-get``, ``dnf``, or ``yum``, install Git and curl, and make a
-shallow checkout. This is a complete script, not pseudocode:
+Linux, and older RHEL-family systems. It needs to use whichever package manager
+is installed, install Git and curl, and make a shallow checkout. This is the
+complete script:
 
 .. code-block:: python
 
    #!/usr/bin/env python3
    import os
-   import platform
    import shutil
    from pathlib import Path
 
@@ -31,34 +30,21 @@ shallow checkout. This is a complete script, not pseudocode:
 
    REPOSITORY = "https://github.com/example/service.git"
    DESTINATION = Path.home() / "src" / "service"
-   REQUIRED_PACKAGES = ("git", "curl")
+   manager_name = next(
+       (name for name in ("apt-get", "dnf", "yum") if shutil.which(name)),
+       None,
+   )
+   if manager_name is None:
+       raise RuntimeError("apt-get, dnf, or yum is required")
 
-
-   def select_package_manager():
-       release = platform.freedesktop_os_release()
-       family = {
-           release.get("ID", ""),
-           *release.get("ID_LIKE", "").split(),
-       }
-
-       if family & {"debian", "ubuntu"}:
-           return "apt-get", {"yes": True}
-       if shutil.which("dnf"):
-           return "dnf", {"assumeyes": True}
-       if shutil.which("yum"):
-           return "yum", {"assumeyes": True}
-       raise RuntimeError(f"unsupported Linux family: {sorted(family)}")
-
-
-   manager_name, install_options = select_package_manager()
    manager = getattr(lincl, manager_name)
-
    if os.geteuid() != 0:
        manager = getattr(lincl.sudo, manager_name)
 
    if manager_name == "apt-get":
        manager.update()
-   manager.install(*REQUIRED_PACKAGES, **install_options)
+   install_flag = "yes" if manager_name == "apt-get" else "assumeyes"
+   manager.install("git", "curl", **{install_flag: True})
 
    DESTINATION.parent.mkdir(parents=True, exist_ok=True)
    lincl.git.clone(REPOSITORY, DESTINATION, depth=1)
@@ -86,9 +72,9 @@ process machinery stays in your application code:
      - ``git clone --depth=1 "$url" "$destination"``
      - ``subprocess.run(["git", "clone", "--depth=1", ...])``
    * - Branch by distribution
-     - Normal Python sets, mappings, and functions.
-     - ``case`` or compound ``[[ ... ]]`` expressions.
-     - Normal Python sets, mappings, and functions.
+     - Pick the installed tool with ``shutil.which`` and ``getattr``.
+     - Loop over ``command -v`` checks.
+     - Pick the tool, then construct every argument vector manually.
    * - Failure handling
      - Typed exceptions carrying status, stdout, and stderr.
      - Exit codes, traps, and explicitly captured streams.
@@ -119,33 +105,38 @@ raises a specific ``CommandNotFoundError``.
 Why not just Bash?
 ~~~~~~~~~~~~~~~~~~
 
-The equivalent Bash is compact, but distribution parsing, branching, quoting,
-and error reporting quickly become the script's responsibility:
+The equivalent Bash is compact, but branching, quoting, and error reporting
+quickly become the script's responsibility:
 
 .. code-block:: bash
 
    #!/usr/bin/env bash
    set -euo pipefail
 
-   . /etc/os-release
-   family="${ID} ${ID_LIKE:-}"
    prefix=()
    if (( EUID != 0 )); then
      prefix=(sudo)
    fi
 
-   if [[ " ${family} " == *" debian "* ||
-         " ${family} " == *" ubuntu "* ]]; then
-     "${prefix[@]}" apt-get update
-     "${prefix[@]}" apt-get install --yes git curl
-   elif command -v dnf >/dev/null 2>&1; then
-     "${prefix[@]}" dnf install --assumeyes git curl
-   elif command -v yum >/dev/null 2>&1; then
-     "${prefix[@]}" yum install --assumeyes git curl
-   else
-     printf 'unsupported Linux family: %s\n' "${family}" >&2
+   manager=""
+   for candidate in apt-get dnf yum; do
+     if command -v "${candidate}" >/dev/null 2>&1; then
+       manager="${candidate}"
+       break
+     fi
+   done
+   if [[ -z "${manager}" ]]; then
+     printf 'apt-get, dnf, or yum is required\n' >&2
      exit 1
    fi
+
+   if [[ "${manager}" == apt-get ]]; then
+     "${prefix[@]}" apt-get update
+     install_flag=--yes
+   else
+     install_flag=--assumeyes
+   fi
+   "${prefix[@]}" "${manager}" install "${install_flag}" git curl
 
    mkdir -p "${HOME}/src"
    git clone --depth=1 \
@@ -167,14 +158,12 @@ equivalent:
 
    #!/usr/bin/env python3
    import os
-   import platform
    import shutil
    import subprocess
    from pathlib import Path
 
    REPOSITORY = "https://github.com/example/service.git"
    DESTINATION = Path.home() / "src" / "service"
-   REQUIRED_PACKAGES = ("git", "curl")
 
 
    def execute(*arguments):
@@ -186,23 +175,13 @@ equivalent:
        )
 
 
-   release = platform.freedesktop_os_release()
-   family = {
-       release.get("ID", ""),
-       *release.get("ID_LIKE", "").split(),
-   }
-
-   if family & {"debian", "ubuntu"}:
-       manager = "apt-get"
-       install_option = "--yes"
-   elif shutil.which("dnf"):
-       manager = "dnf"
-       install_option = "--assumeyes"
-   elif shutil.which("yum"):
-       manager = "yum"
-       install_option = "--assumeyes"
-   else:
-       raise RuntimeError(f"unsupported Linux family: {sorted(family)}")
+   manager = next(
+       (name for name in ("apt-get", "dnf", "yum") if shutil.which(name)),
+       None,
+   )
+   if manager is None:
+       raise RuntimeError("apt-get, dnf, or yum is required")
+   install_option = "--yes" if manager == "apt-get" else "--assumeyes"
 
    prefix = () if os.geteuid() == 0 else ("sudo",)
    if manager == "apt-get":
@@ -212,7 +191,8 @@ equivalent:
        manager,
        "install",
        install_option,
-       *REQUIRED_PACKAGES,
+       "git",
+       "curl",
    )
 
    DESTINATION.parent.mkdir(parents=True, exist_ok=True)
