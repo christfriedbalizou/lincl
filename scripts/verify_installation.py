@@ -11,7 +11,7 @@ def verify_installation() -> None:
     assert result.stderr == ""
     assert result.returncode == 0
 
-    parsed = echo("first\nsecond").parse(str.splitlines)
+    parsed = echo("first\nsecond").parse(parser=str.splitlines)
     assert parsed.value == ["first", "second"]
     assert parsed.returncode == 0
 

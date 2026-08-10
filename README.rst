@@ -132,7 +132,7 @@ Call ``parse()`` on one result to transform that call's captured stdout:
 
    from lincl import ls
 
-   entries = ls("./").parse(str.splitlines)
+   entries = ls("./").parse(parser=str.splitlines)
    entries.append("another-entry")
    entries = entries + ["one-more-entry"]
 
