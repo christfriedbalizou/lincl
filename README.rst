@@ -3,86 +3,72 @@ lincl
 
 |CI| |CodeQL| |PyPI| |Python|
 
-Use installed Linux commands as small, readable Python callables without
-writing the same ``subprocess`` boilerplate in every project.
+Linux commands, with a Python-shaped interface.
 
-``lincl`` resolves a command from ``PATH``, converts Python arguments to a
-command-line argument vector, runs it without a shell, captures standard
-output and standard error, and checks the exit status.
+If you have ever reached for ``subprocess`` just to copy a file or ask a tool
+for its version, ``lincl`` is for you. It turns programs already installed on
+your machine into Python callables:
 
 .. code-block:: python
 
-   from lincl import cp as copy
+   from lincl import cp
 
-   stdout, stderr = copy("source.txt", "destination.txt", force=True)
+   stdout, stderr = cp(
+       "notes.txt",
+       "notes.backup.txt",
+       preserve="mode,timestamps",
+   )
 
-The call above executes the equivalent of:
+That call runs the equivalent of:
 
 .. code-block:: console
 
-   cp --force source.txt destination.txt
+   cp --preserve=mode,timestamps notes.txt notes.backup.txt
 
-Project status
---------------
+There is no shell involved. ``lincl`` builds an argument vector, starts the
+command, captures its output, and checks its exit status.
 
-The current release provides the original, intentionally small command
-wrapper. Work is planned on stricter argument handling, typed execution
-errors, timeouts, safer process controls, and richer Python help. Until those
-features land, read `Current behavior and limitations`_ before using
-``lincl`` with untrusted input or privileged commands.
+Quick start
+-----------
 
-Requirements
-------------
-
-- Linux with the command you want to invoke installed and available on
-  ``PATH``.
-- Python 3.10 or newer.
-- The permissions required by the invoked command. ``lincl`` does not grant
-  privileges or bypass normal operating-system controls.
-
-Installation
-------------
-
-Install the latest release from PyPI:
+``lincl`` requires Linux, Python 3.10 or newer, and the command you want to use
+on ``PATH``.
 
 .. code-block:: console
 
    python -m pip install lincl
 
-For local development, clone the repository and install the locked tools:
-
-.. code-block:: console
-
-   git clone https://github.com/christfriedbalizou/lincl.git
-   cd lincl
-   python -m pip install --require-hashes -r requirements-dev.txt
-   python -m pip install -e .
-   pre-commit install --install-hooks
-
-Usage
------
-
-Import any executable by its command name. Importing fails immediately with
-``ImportError`` if the executable cannot be found:
+Import a command by name and call it like a function:
 
 .. code-block:: python
 
    from lincl import echo
-   from lincl import command
 
    stdout, stderr = echo("Hello from lincl")
+
+   assert stdout == "Hello from lincl\n"
+   assert stderr == ""
+
+You can also resolve a command at runtime:
+
+.. code-block:: python
+
+   from lincl import command
+
    git = command("git")
-   version_stdout, version_stderr = git("version")
+   stdout, stderr = git("version")
 
-Positional arguments are appended to the command. Keyword arguments are
-placed before positional arguments and converted to options:
+How arguments are translated
+----------------------------
 
-- One-character names use a single dash: ``v=True`` becomes ``-v``.
-- Longer names use two dashes: ``recursive=True`` becomes ``--recursive``.
-- Underscores become dashes: ``show_tabs=True`` becomes ``--show-tabs``.
-- Non-boolean values use ``--option=value``.
-- Lists become comma-separated values: ``include=["A", "B"]`` becomes
-  ``--include=A,B``.
+Positional arguments stay positional. Keyword arguments become command-line
+options and are placed before them:
+
+- ``v=True`` becomes ``-v``.
+- ``recursive=True`` becomes ``--recursive``.
+- ``show_tabs=True`` becomes ``--show-tabs``.
+- ``output="report.txt"`` becomes ``--output=report.txt``.
+- ``include=["curl", "git"]`` becomes ``--include=curl,git``.
 
 For example:
 
@@ -97,71 +83,106 @@ For example:
        include=["ca-certificates", "curl"],
    )
 
-This produces the argument vector represented by:
+This produces:
 
 .. code-block:: console
 
    debootstrap --variant=buildd --include=ca-certificates,curl stable /srv/chroot
 
-Successful commands return a ``(stdout, stderr)`` tuple containing text. A
-non-zero exit raises ``RuntimeError`` with the rendered command and captured
-standard error.
+Successful commands return ``(stdout, stderr)`` as text. If a command exits
+with a non-zero status, ``lincl`` raises ``RuntimeError`` with the command and
+captured standard error. Importing a command that is not installed raises
+``ImportError``.
 
-Current behavior and limitations
---------------------------------
+Project status
+--------------
 
-- Boolean values currently emit their option regardless of whether the value
-  is ``True`` or ``False``. Omit a keyword to omit its flag.
-- List values are joined with commas; repeated options and space-separated
-  list conventions are not yet supported.
-- Arguments must currently be strings where the underlying implementation
-  requires strings. Convert ``pathlib.Path`` and numeric values explicitly.
-- Output is captured in memory and decoded as text. There is no streaming or
-  bytes-mode public API yet.
-- There is no public timeout, cancellation, environment, input, or working
-  directory API yet.
-- Failures currently use ``RuntimeError`` rather than a typed exception with
-  structured exit details.
-- A missing dynamically imported command currently prints a diagnostic before
-  raising ``ImportError``. Library logging behavior will be corrected with the
-  core error model.
-- ``from lincl import *`` is intentionally unsupported because available
-  commands depend on the host.
-- Command availability and option syntax vary by Linux distribution and
-  installed command version. ``lincl`` does not install or emulate commands.
-- Do not construct command names or arguments from untrusted input without
-  validating them. Although execution uses an argument vector rather than a
-  shell, the invoked program can still interpret dangerous options or paths.
+``lincl`` is small and usable, but its execution API is still evolving. Before
+using it in production or with untrusted input, keep these current limitations
+in mind:
 
-Development
------------
+- ``False`` still emits a boolean option. Omit the keyword when you do not want
+  the flag.
+- Lists are comma-separated. Repeated options and space-separated list formats
+  are not supported yet.
+- Arguments must be strings where required by ``subprocess``. Convert numbers
+  and ``pathlib.Path`` objects before passing them.
+- Output is captured in memory and decoded as text. Streaming and bytes modes
+  do not have public APIs yet.
+- Timeouts, cancellation, input, environment overrides, and working-directory
+  controls do not have public APIs yet.
+- Execution failures use ``RuntimeError`` rather than a structured exception.
+- Importing a missing command prints a diagnostic before raising
+  ``ImportError``.
+- ``from lincl import *`` is intentionally unsupported because the available
+  commands depend on the host system.
 
-The committed lockfiles are the source of truth for development tools. Common
-commands are:
+Command behavior also varies between distributions and command versions.
+``lincl`` wraps what is installed; it does not install commands, emulate them,
+or grant additional privileges.
+
+Security
+--------
+
+``lincl`` invokes commands with an argument vector rather than interpolating
+arguments into a shell command. That removes a common source of shell
+injection, but it does not make every command or option safe.
+
+Validate command names, options, paths, and input that come from users or
+external systems. Be especially careful with commands running as root:
+``lincl`` does not bypass permissions, and it cannot protect you from a
+dangerous option accepted by the program you invoke.
+
+Getting help
+------------
+
+Found a bug or have an idea? Open an issue in the `GitHub issue tracker`_. A
+small reproduction, the Python version, Linux distribution, command version,
+and full error output make problems much easier to diagnose.
+
+Please search existing issues before opening a new one. For larger changes,
+start with an issue so the design can be discussed before anyone invests a lot
+of time in an implementation.
+
+Contributing
+------------
+
+Contributions are welcome—bug fixes, tests, documentation, and careful API
+improvements all help.
+
+Create a virtual environment, then install the locked development toolchain:
 
 .. code-block:: console
 
-   make sync
+   git clone https://github.com/christfriedbalizou/lincl.git
+   cd lincl
+   python -m venv .venv
+   . .venv/bin/activate
+   python -m pip install --require-hashes -r requirements-dev.txt
+   python -m pip install -e .
+   pre-commit install --install-hooks
+
+Run the same checks used by CI before opening a pull request:
+
+.. code-block:: console
+
    make lint
    make test
-   make build
    make check-dist
 
-Add runtime dependencies to ``requirements.in`` and test/development
-dependencies to ``requirements-dev.in``. Run ``make upgrade-reqs`` to refresh
-the hashed lockfiles. Pre-commit runs the same formatting and lint checks as
-CI.
+Runtime dependencies belong in ``requirements.in``; development and test
+dependencies belong in ``requirements-dev.in``. Run ``make upgrade-reqs`` to
+rebuild both hashed lockfiles after changing either input file.
 
-CI tests every supported Python version on Ubuntu and smoke-tests the package
-on Debian, Ubuntu, and Rocky Linux. It also runs pre-commit, dependency audits,
-CodeQL analysis, package builds, metadata checks, and installation tests for
-both wheel and source distributions.
+CI tests Python 3.10 through 3.14, exercises source installation on Debian,
+Ubuntu, and Rocky Linux, audits dependencies, runs CodeQL, and verifies both
+the wheel and source distribution.
 
 Releasing
 ---------
 
-Version numbers come from ``lincl.__version__``. Create a release commit and
-tag with one of:
+This section is for maintainers. ``lincl.__version__`` is the canonical
+version. Prepare a release commit and tag with one of:
 
 .. code-block:: console
 
@@ -169,17 +190,22 @@ tag with one of:
    bumpversion minor
    bumpversion major
 
-Push the commit and tag, then create a GitHub Release for that tag. The release
-workflow verifies that the tag matches ``lincl.__version__``, runs the full
-test and build path, attests the artifacts, and publishes the exact artifacts
-to PyPI through Trusted Publishing. The ``pypi`` GitHub environment and PyPI
-trusted publisher must be configured before the first release; no PyPI token
-is required in repository secrets.
+Push the release commit and tag, then publish a GitHub Release for that tag.
+The release workflow checks the version, tests and builds the tagged commit,
+attests the distributions, and sends those exact artifacts to PyPI through
+Trusted Publishing.
+
+The GitHub ``pypi`` environment and the matching PyPI Trusted Publisher must be
+configured before the first release. The workflow does not use a stored PyPI
+password or API token.
 
 License
 -------
 
-``lincl`` is released under the MIT License. See ``LICENSE``.
+``lincl`` is available under the `MIT License`_.
+
+.. _GitHub issue tracker: https://github.com/christfriedbalizou/lincl/issues
+.. _MIT License: https://github.com/christfriedbalizou/lincl/blob/main/LICENSE
 
 .. |CI| image:: https://img.shields.io/github/actions/workflow/status/christfriedbalizou/lincl/ci.yml?branch=main&style=for-the-badge&label=CI
    :target: https://github.com/christfriedbalizou/lincl/actions/workflows/ci.yml
