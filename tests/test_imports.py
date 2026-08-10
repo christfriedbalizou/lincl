@@ -55,7 +55,25 @@ def test_dir_contains_stable_public_api():
     assert "CommandResult" in dir(lincl)
     assert "OutputParseError" in dir(lincl)
     assert "Command" not in dir(lincl)
+    assert "CommandCallable" not in dir(lincl)
     assert "command" not in dir(lincl)
+    assert "transcribe" not in dir(lincl)
+
+
+def test_public_api_contains_only_results_options_and_errors():
+    assert set(lincl.__all__) == {
+        "CommandError",
+        "CommandExecutionError",
+        "CommandLaunchError",
+        "CommandNotFoundError",
+        "CommandResult",
+        "CommandTimeoutError",
+        "ConfigurationError",
+        "ExecutionOptions",
+        "OutputParseError",
+    }
+    assert "CommandCallable" not in vars(lincl)
+    assert "transcribe" not in vars(lincl)
 
 
 def test_internal_command_type_is_not_importable():

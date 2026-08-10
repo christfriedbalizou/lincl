@@ -13,9 +13,8 @@ from lincl import (
     CommandTimeoutError,
     ExecutionOptions,
     OutputParseError,
-    transcribe,
 )
-from lincl.core import _resolve_command
+from lincl.core import _resolve_command, _transcribe
 
 
 @pytest.fixture
@@ -267,7 +266,7 @@ def test_parser_configuration_rejects_non_callable(python_command):
     ],
 )
 def test_transcribe(arguments, options, expected):
-    assert transcribe(*arguments, **options) == expected
+    assert _transcribe(*arguments, **options) == expected
 
 
 @pytest.mark.parametrize(
@@ -283,7 +282,7 @@ def test_transcribe_rejects_ambiguous_values(
     arguments, options, error, message
 ):
     with pytest.raises(error, match=message):
-        transcribe(*arguments, **options)
+        _transcribe(*arguments, **options)
 
 
 def test_execution_options_reject_invalid_timeout():

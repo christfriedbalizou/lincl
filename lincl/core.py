@@ -83,7 +83,7 @@ def _serialize_option(name: str, value: OptionValue) -> list[str]:
     return [f"{option}={rendered}"]
 
 
-def transcribe(
+def _transcribe(
     *arguments: ScalarArgument,
     **options: OptionValue,
 ) -> list[str]:
@@ -135,7 +135,7 @@ class Command(Generic[Output]):
         args = (
             self.executable,
             *self.prefix,
-            *transcribe(*arguments, **command_options),
+            *_transcribe(*arguments, **command_options),
         )
         environment = (
             dict(process_options.env)

@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from lincl.core import CommandCallable, _load_command, transcribe
+from lincl.core import _load_command
 from lincl.exceptions import (
     CommandError,
     CommandExecutionError,
@@ -25,11 +25,9 @@ __all__ = [
     "CommandNotFoundError",
     "CommandResult",
     "CommandTimeoutError",
-    "CommandCallable",
     "ConfigurationError",
     "ExecutionOptions",
     "OutputParseError",
-    "transcribe",
 ]
 
 
