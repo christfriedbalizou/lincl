@@ -14,40 +14,33 @@ exceptions.
 A real automation script
 ------------------------
 
-Suppose a bootstrap script must work across Debian, Ubuntu, Fedora, Rocky
-Linux, and older RHEL-family systems. It needs to use whichever package manager
-is installed, install Git and curl, and make a shallow checkout. This is the
+Suppose you want to package the committed files in a Git repository, compress
+the archive, calculate its checksum, and report what you produced. Here is the
 complete script:
 
 .. code-block:: python
 
    #!/usr/bin/env python3
-   import os
-   import shutil
    from pathlib import Path
 
-   import lincl
+   from lincl import du, git, gzip, sha256sum
 
-   REPOSITORY = "https://github.com/example/service.git"
-   DESTINATION = Path.home() / "src" / "service"
-   manager_name = next(
-       (name for name in ("apt-get", "dnf", "yum") if shutil.which(name)),
-       None,
-   )
-   if manager_name is None:
-       raise RuntimeError("apt-get, dnf, or yum is required")
+   archive = Path("dist/source.tar")
+   archive.parent.mkdir(parents=True, exist_ok=True)
 
-   manager = getattr(lincl, manager_name)
-   if os.geteuid() != 0:
-       manager = getattr(lincl.sudo, manager_name)
+   tracked_files = git.ls_files().parser(str.splitlines)
+   if not tracked_files:
+       raise RuntimeError("the repository has no tracked files")
 
-   if manager_name == "apt-get":
-       manager.update()
-   install_flag = "yes" if manager_name == "apt-get" else "assumeyes"
-   manager.install("git", "curl", **{install_flag: True})
+   git.archive("HEAD", format="tar", output=archive)
+   gzip(archive, force=True)
 
-   DESTINATION.parent.mkdir(parents=True, exist_ok=True)
-   lincl.git.clone(REPOSITORY, DESTINATION, depth=1)
+   bundle = archive.with_suffix(".tar.gz")
+   checksum = sha256sum(bundle).parser(lambda output: output.split()[0])
+   size = du(bundle, human_readable=True).parser(lambda output: output.split()[0])
+
+   print(f"Packed {len(tracked_files)} files into {bundle} ({size.value})")
+   print(f"SHA-256: {checksum.value}")
 
 Side by side
 ~~~~~~~~~~~~
@@ -63,18 +56,18 @@ process machinery stays in your application code:
      - lincl
      - Bash
      - ``subprocess``
-   * - Install packages
-     - ``manager.install(*packages, yes=True)``
-     - ``sudo apt-get install --yes "${packages[@]}"``
-     - Build and pass a complete argument list to ``subprocess.run``.
-   * - Clone
-     - ``lincl.git.clone(url, destination, depth=1)``
-     - ``git clone --depth=1 "$url" "$destination"``
-     - ``subprocess.run(["git", "clone", "--depth=1", ...])``
-   * - Branch by distribution
-     - Pick the installed tool with ``shutil.which`` and ``getattr``.
-     - Loop over ``command -v`` checks.
-     - Pick the tool, then construct every argument vector manually.
+   * - Git subcommand
+     - ``git.archive("HEAD", format="tar", output=archive)``
+     - ``git archive --format=tar --output="$archive" HEAD``
+     - Build the complete ``["git", "archive", ...]`` argument list.
+   * - Parse output
+     - ``git.ls_files().parser(str.splitlines)``
+     - Command substitution and shell arrays.
+     - Capture, decode, check, then split ``stdout``.
+   * - Compose tools
+     - Import each command and call it directly.
+     - Invoke commands directly with careful quoting.
+     - Repeat ``subprocess.run`` policy for every command.
    * - Failure handling
      - Typed exceptions carrying status, stdout, and stderr.
      - Exit codes, traps, and explicitly captured streams.
@@ -88,59 +81,50 @@ process machinery stays in your application code:
      - Small, shell-native workflows.
      - Low-level or highly customized process management.
 
-The last operations become the commands you would write by hand:
+The Python reads like the commands you would write by hand:
 
 .. code-block:: console
 
-   sudo apt-get update
-   sudo apt-get install --yes git curl
-   git clone --depth=1 https://github.com/example/service.git ~/src/service
+   git ls-files
+   git archive --format=tar --output=dist/source.tar HEAD
+   gzip --force dist/source.tar
+   sha256sum dist/source.tar.gz
+   du --human-readable dist/source.tar.gz
 
-On Fedora or Rocky Linux, the same Python script naturally emits ``dnf install
---assumeyes git curl`` instead. If the process already runs as root, it omits
-``sudo``. A rejected package transaction or failed clone raises a typed lincl
-exception retaining the exit status, stdout, and stderr; a missing executable
-raises a specific ``CommandNotFoundError``.
+Notice that ``git.ls_files`` and ``git.archive`` are ordinary Git subcommands,
+not special lincl integrations. Attribute chaining preserves their position in
+the argument vector, while keyword arguments become their options.
 
 Why not just Bash?
 ~~~~~~~~~~~~~~~~~~
 
-The equivalent Bash is compact, but branching, quoting, and error reporting
-quickly become the script's responsibility:
+The Bash version is compact, but parsed output, quoting, and error reporting
+belong to the script:
 
 .. code-block:: bash
 
    #!/usr/bin/env bash
    set -euo pipefail
 
-   prefix=()
-   if (( EUID != 0 )); then
-     prefix=(sudo)
-   fi
+   archive=dist/source.tar
+   mkdir -p "$(dirname "${archive}")"
 
-   manager=""
-   for candidate in apt-get dnf yum; do
-     if command -v "${candidate}" >/dev/null 2>&1; then
-       manager="${candidate}"
-       break
-     fi
-   done
-   if [[ -z "${manager}" ]]; then
-     printf 'apt-get, dnf, or yum is required\n' >&2
+   mapfile -t tracked_files < <(git ls-files)
+   if (( ${#tracked_files[@]} == 0 )); then
+     printf 'the repository has no tracked files\n' >&2
      exit 1
    fi
 
-   if [[ "${manager}" == apt-get ]]; then
-     "${prefix[@]}" apt-get update
-     install_flag=--yes
-   else
-     install_flag=--assumeyes
-   fi
-   "${prefix[@]}" "${manager}" install "${install_flag}" git curl
+   git archive --format=tar --output="${archive}" HEAD
+   gzip --force "${archive}"
 
-   mkdir -p "${HOME}/src"
-   git clone --depth=1 \
-     https://github.com/example/service.git "${HOME}/src/service"
+   bundle=${archive}.gz
+   read -r checksum _ < <(sha256sum "${bundle}")
+   read -r size _ < <(du --human-readable "${bundle}")
+
+   printf 'Packed %d files into %s (%s)\n' \
+     "${#tracked_files[@]}" "${bundle}" "${size}"
+   printf 'SHA-256: %s\n' "${checksum}"
 
 Bash remains excellent when a shell is the right abstraction. ``lincl`` earns
 its place when the workflow needs Python libraries, richer data structures,
@@ -157,13 +141,10 @@ equivalent:
 .. code-block:: python
 
    #!/usr/bin/env python3
-   import os
-   import shutil
    import subprocess
    from pathlib import Path
 
-   REPOSITORY = "https://github.com/example/service.git"
-   DESTINATION = Path.home() / "src" / "service"
+   archive = Path("dist/source.tar")
 
 
    def execute(*arguments):
@@ -175,34 +156,26 @@ equivalent:
        )
 
 
-   manager = next(
-       (name for name in ("apt-get", "dnf", "yum") if shutil.which(name)),
-       None,
-   )
-   if manager is None:
-       raise RuntimeError("apt-get, dnf, or yum is required")
-   install_option = "--yes" if manager == "apt-get" else "--assumeyes"
+   archive.parent.mkdir(parents=True, exist_ok=True)
+   tracked_files = execute("git", "ls-files").stdout.splitlines()
+   if not tracked_files:
+       raise RuntimeError("the repository has no tracked files")
 
-   prefix = () if os.geteuid() == 0 else ("sudo",)
-   if manager == "apt-get":
-       execute(*prefix, manager, "update")
-   execute(
-       *prefix,
-       manager,
-       "install",
-       install_option,
-       "git",
-       "curl",
-   )
-
-   DESTINATION.parent.mkdir(parents=True, exist_ok=True)
    execute(
        "git",
-       "clone",
-       "--depth=1",
-       REPOSITORY,
-       str(DESTINATION),
+       "archive",
+       "--format=tar",
+       f"--output={archive}",
+       "HEAD",
    )
+   execute("gzip", "--force", str(archive))
+
+   bundle = archive.with_suffix(".tar.gz")
+   checksum = execute("sha256sum", str(bundle)).stdout.split()[0]
+   size = execute("du", "--human-readable", str(bundle)).stdout.split()[0]
+
+   print(f"Packed {len(tracked_files)} files into {bundle} ({size})")
+   print(f"SHA-256: {checksum}")
 
 With lincl, the command structure remains visible without repeating capture,
 decoding, exit checking, and error adaptation at every call site.
