@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from lincl.core import Command, CommandCallable, _load_command, transcribe
+from lincl.core import CommandCallable, _load_command, transcribe
 from lincl.exceptions import (
     CommandError,
     CommandExecutionError,
@@ -19,7 +19,6 @@ __version__ = "1.1.0"
 __author__ = "Christfried BALIZOU"
 
 __all__ = [
-    "Command",
     "CommandError",
     "CommandExecutionError",
     "CommandLaunchError",

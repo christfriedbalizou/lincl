@@ -57,4 +57,10 @@ def test_private_attributes_follow_normal_module_semantics():
 def test_dir_contains_stable_public_api():
     assert "CommandResult" in dir(lincl)
     assert "OutputParseError" in dir(lincl)
+    assert "Command" not in dir(lincl)
     assert "command" not in dir(lincl)
+
+
+def test_internal_command_type_is_not_importable():
+    with pytest.raises(CommandNotFoundError, match="Command"):
+        getattr(lincl, "Command")
