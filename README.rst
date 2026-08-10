@@ -267,10 +267,7 @@ the selected subcommand, where tools such as Git expect them:
 
    result = git.clone(repository_url, destination, depth=1)
 
-That call runs ``git clone --depth=1 REPOSITORY_URL DESTINATION``. Use the
-explicit ``git.subcommand("clone")`` form when a subcommand conflicts with a
-``lincl`` API attribute such as ``configure`` or ``executable``. ``run`` is not
-reserved: ``docker.run(...)`` executes the real Docker ``run`` subcommand.
+That call runs ``git clone --depth=1 REPOSITORY_URL DESTINATION``.
 
 Python help, backed by the system manual
 ----------------------------------------
