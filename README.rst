@@ -181,15 +181,15 @@ License
 
 ``lincl`` is released under the MIT License. See ``LICENSE``.
 
-.. |CI| image:: https://github.com/christfriedbalizou/lincl/actions/workflows/ci.yml/badge.svg
+.. |CI| image:: https://img.shields.io/github/actions/workflow/status/christfriedbalizou/lincl/ci.yml?branch=main&style=for-the-badge&label=CI
    :target: https://github.com/christfriedbalizou/lincl/actions/workflows/ci.yml
    :alt: CI status
-.. |CodeQL| image:: https://github.com/christfriedbalizou/lincl/actions/workflows/codeql.yml/badge.svg
+.. |CodeQL| image:: https://img.shields.io/github/actions/workflow/status/christfriedbalizou/lincl/codeql.yml?branch=main&style=for-the-badge&label=CodeQL
    :target: https://github.com/christfriedbalizou/lincl/actions/workflows/codeql.yml
    :alt: CodeQL status
-.. |PyPI| image:: https://img.shields.io/pypi/v/lincl.svg
+.. |PyPI| image:: https://img.shields.io/pypi/v/lincl.svg?style=for-the-badge
    :target: https://pypi.org/project/lincl/
    :alt: PyPI version
-.. |Python| image:: https://img.shields.io/pypi/pyversions/lincl.svg
+.. |Python| image:: https://img.shields.io/pypi/pyversions/lincl.svg?style=for-the-badge
    :target: https://pypi.org/project/lincl/
    :alt: Supported Python versions

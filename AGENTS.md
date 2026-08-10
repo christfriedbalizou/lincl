@@ -199,11 +199,12 @@ Use Conventional Commits:
 - `chore:` performs maintenance such as dependency or formatting updates; do
   not use it for adding or removing features.
 
-Commits and pushes are authorized for this repository, but perform them only
-when they are part of the user's requested workflow. Before pushing, run the
-applicable tests and pre-commit hooks, inspect the diff, and confirm no secrets,
-generated junk, or unrelated changes are included. Never force-push or rewrite
-shared history without explicit instruction.
+Commit completed changes automatically using the conventions above. Before
+every commit, run the full pre-commit suite, inspect the staged diff, and
+confirm no secrets, generated junk, or unrelated changes are included. Do not
+commit while pre-commit or applicable tests are failing. Push only when the
+user explicitly requests it. Never force-push or rewrite shared history without
+explicit instruction.
 
 ## Documentation and completion report
 
