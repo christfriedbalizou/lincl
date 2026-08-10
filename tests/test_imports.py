@@ -1,9 +1,11 @@
+import inspect
+import pydoc
 import shutil
 
 import pytest
 
 import lincl
-from lincl import Command, CommandNotFoundError
+from lincl import CommandNotFoundError
 
 
 def test_missing_dynamic_command_raises_typed_import_error(capsys):
@@ -21,7 +23,7 @@ def test_installed_command_is_resolved_once():
 
     from lincl import ls
 
-    assert isinstance(ls, Command)
+    assert inspect.isfunction(ls)
     assert ls.executable == executable
     assert callable(ls)
 
@@ -29,7 +31,20 @@ def test_installed_command_is_resolved_once():
 def test_dynamic_command_can_be_aliased():
     from lincl import cp as copy
 
-    assert isinstance(copy, Command)
+    assert inspect.isfunction(copy)
+    assert copy.__name__ == "cp"
+
+
+def test_dynamic_command_has_pythonic_help():
+    from lincl import ls
+
+    documentation = pydoc.render_doc(ls, renderer=pydoc.plaintext)
+
+    assert "function ls in module lincl" in documentation
+    assert "ls(*arguments, parser=None, **options)" in documentation
+    assert "CommandResult" in documentation
+    assert "System manual:" in documentation
+    assert "class Command" not in documentation
 
 
 def test_private_attributes_follow_normal_module_semantics():

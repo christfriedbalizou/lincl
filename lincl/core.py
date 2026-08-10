@@ -5,8 +5,19 @@ import shutil
 import subprocess
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any, Callable, Generic, TypeAlias, TypeVar, overload
+from inspect import Parameter, Signature
+from typing import (
+    Any,
+    Callable,
+    Generic,
+    Protocol,
+    TypeAlias,
+    TypeVar,
+    cast,
+    overload,
+)
 
+from lincl.documentation import command_doc
 from lincl.exceptions import (
     CommandExecutionError,
     CommandLaunchError,
@@ -22,6 +33,36 @@ OptionValue: TypeAlias = (
 )
 Output = TypeVar("Output")
 ParsedOutput = TypeVar("ParsedOutput")
+_HELP_SIGNATURE = Signature(
+    parameters=(
+        Parameter("arguments", Parameter.VAR_POSITIONAL),
+        Parameter("parser", Parameter.KEYWORD_ONLY, default=None),
+        Parameter("options", Parameter.VAR_KEYWORD),
+    )
+)
+
+
+class CommandCallable(Protocol[Output]):
+    executable: str
+
+    def __call__(
+        self,
+        *arguments: ScalarArgument,
+        parser: Callable[[str], Any] | None = None,
+        **options: OptionValue,
+    ) -> CommandResult[Any]: ...
+
+    def run(
+        self,
+        *arguments: ScalarArgument,
+        options: Mapping[str, OptionValue] | None = None,
+        execution: ExecutionOptions | None = None,
+    ) -> CommandResult[Output]: ...
+
+    def with_parser(
+        self,
+        parser: Callable[[str], ParsedOutput],
+    ) -> "CommandCallable[ParsedOutput]": ...
 
 
 def _identity(output: str) -> str:
@@ -207,3 +248,34 @@ def _resolve_command(name: str | os.PathLike[str]) -> Command[str]:
     if executable is None:
         raise CommandNotFoundError(command_name)
     return Command(executable=os.path.abspath(executable), parser=_identity)
+
+
+def _as_callable(
+    command_name: str,
+    resolved: Command[Output],
+) -> CommandCallable[Output]:
+    def program(
+        *arguments: ScalarArgument,
+        parser: Callable[[str], Any] | None = None,
+        **options: OptionValue,
+    ) -> CommandResult[Any]:
+        return resolved(*arguments, parser=parser, **options)
+
+    def with_parser(
+        parser: Callable[[str], ParsedOutput],
+    ) -> CommandCallable[ParsedOutput]:
+        return _as_callable(command_name, resolved.with_parser(parser))
+
+    program.__name__ = command_name
+    program.__qualname__ = command_name
+    program.__module__ = "lincl"
+    program.__doc__ = command_doc(command_name, resolved.executable)
+    setattr(program, "__signature__", _HELP_SIGNATURE)
+    setattr(program, "run", resolved.run)
+    setattr(program, "with_parser", with_parser)
+    setattr(program, "executable", resolved.executable)
+    return cast(CommandCallable[Output], program)
+
+
+def _load_command(name: str) -> CommandCallable[str]:
+    return _as_callable(name, _resolve_command(name))

@@ -1,0 +1,77 @@
+"""Build Python help for dynamically imported commands."""
+
+import os
+import re
+import shutil
+import subprocess
+from functools import lru_cache
+
+_ANSI_ESCAPE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
+_OVERSTRIKE = re.compile(r".\x08")
+
+
+def _plain_text(output: str) -> str:
+    while "\x08" in output:
+        output = _OVERSTRIKE.sub("", output)
+    return _ANSI_ESCAPE.sub("", output).strip()
+
+
+@lru_cache(maxsize=128)
+def _read_manual(command_name: str) -> str | None:
+    man = shutil.which("man")
+    if man is None:
+        return None
+    environment = os.environ.copy()
+    environment.update(
+        {
+            "MANPAGER": "cat",
+            "MANWIDTH": "88",
+            "PAGER": "cat",
+        }
+    )
+    try:
+        completed = subprocess.run(
+            (man, "--", command_name),
+            capture_output=True,
+            check=False,
+            encoding="utf-8",
+            env=environment,
+            errors="surrogateescape",
+            input="",
+            shell=False,
+            timeout=2,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if completed.returncode != 0 or not completed.stdout.strip():
+        return None
+    return _plain_text(completed.stdout)
+
+
+def command_doc(command_name: str, executable: str) -> str:
+    manual = _read_manual(command_name)
+    manual_text = manual or (
+        f"No local manual entry was found. Run `man {command_name}` on a "
+        "system that provides one."
+    )
+    return f"""Run the installed `{command_name}` command as a Python callable.
+
+Python usage:
+    {command_name}(*arguments, parser=None, **options) -> CommandResult
+
+`arguments` are passed positionally. Keyword names become command options:
+`a=True` becomes `-a`, `all=True` becomes `--all`, and underscores become
+hyphens. False and None omit an option. Use `parser=` to transform stdout;
+the default value is the unchanged string.
+
+The result behaves like its parsed value and also exposes `args`, `returncode`,
+`stdout`, and `stderr`. Use `.value` when the concrete parsed type is required.
+Use `.run(..., execution=ExecutionOptions(...))` for timeouts, input,
+environment variables, working directories, and decoding controls.
+
+Executable:
+    {executable}
+
+System manual:
+{manual_text}
+"""

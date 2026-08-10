@@ -61,6 +61,28 @@ Import aliases work as you would expect:
    result = version_control("version")
    print(result.stdout, end="")
 
+Python help, backed by the system manual
+----------------------------------------
+
+Dynamic commands are real function-like objects with useful interactive help:
+
+.. code-block:: pycon
+
+   >>> from lincl import ls
+   >>> help(ls)
+   Help on function ls in module lincl:
+
+   ls(*arguments, parser=None, **options)
+       Run the installed `ls` command as a Python callable.
+       ...
+
+The help begins with the Python argument, parser, result, and process-control
+conventions, then includes the locally installed ``man`` page. Manual lookup is
+non-interactive and bounded by a short timeout. If ``man`` or the command's
+manual entry is unavailable, the Python help remains available with a clear
+fallback message. ``lincl`` reads documentation through ``man``; it never runs
+an arbitrary command with ``--help`` while importing it.
+
 How arguments are translated
 ----------------------------
 

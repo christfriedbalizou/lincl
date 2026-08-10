@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from lincl.core import Command, _resolve_command, transcribe
+from lincl.core import Command, CommandCallable, _load_command, transcribe
 from lincl.exceptions import (
     CommandError,
     CommandExecutionError,
@@ -25,6 +25,7 @@ __all__ = [
     "CommandNotFoundError",
     "CommandResult",
     "CommandTimeoutError",
+    "CommandCallable",
     "ExecutionOptions",
     "OutputParseError",
     "transcribe",
@@ -34,7 +35,7 @@ __all__ = [
 def __getattr__(name: str) -> Any:
     if name.startswith("_"):
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    return _resolve_command(name)
+    return _load_command(name)
 
 
 def __dir__() -> list[str]:
