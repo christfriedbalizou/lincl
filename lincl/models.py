@@ -2,22 +2,20 @@
 
 import os
 from dataclasses import dataclass
-from typing import Mapping
+from typing import Generic, Mapping, TypeVar
+
+Output = TypeVar("Output")
 
 
 @dataclass(frozen=True, slots=True)
-class CommandResult:
+class CommandResult(Generic[Output]):
     """The complete, immutable outcome of a successful command."""
 
     args: tuple[str, ...]
     returncode: int
     stdout: str
     stderr: str
-
-    @property
-    def lines(self) -> list[str]:
-        """Return standard output split using Python's line boundaries."""
-        return self.stdout.splitlines()
+    value: Output
 
     @property
     def ok(self) -> bool:

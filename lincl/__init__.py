@@ -2,13 +2,14 @@
 
 from typing import Any
 
-from lincl.core import Command, command, transcribe
+from lincl.core import Command, _resolve_command, transcribe
 from lincl.exceptions import (
     CommandError,
     CommandExecutionError,
     CommandLaunchError,
     CommandNotFoundError,
     CommandTimeoutError,
+    OutputParseError,
 )
 from lincl.models import CommandResult, ExecutionOptions
 
@@ -25,7 +26,7 @@ __all__ = [
     "CommandResult",
     "CommandTimeoutError",
     "ExecutionOptions",
-    "command",
+    "OutputParseError",
     "transcribe",
 ]
 
@@ -34,7 +35,7 @@ def __getattr__(name: str) -> Any:
     """Resolve a missing public attribute as an installed executable."""
     if name.startswith("_"):
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    return command(name)
+    return _resolve_command(name)
 
 
 def __dir__() -> list[str]:

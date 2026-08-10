@@ -50,16 +50,15 @@ Import a command by name and call it like a function:
 
    assert result.stdout == "Hello from lincl\n"
    assert result.stderr == ""
-   assert result.lines == ["Hello from lincl"]
+   assert result.value == "Hello from lincl\n"
 
-You can also resolve a command at runtime:
+Import aliases work as you would expect:
 
 .. code-block:: python
 
-   from lincl import command
+   from lincl import git as version_control
 
-   git = command("git")
-   result = git("version")
+   result = version_control("version")
    print(result.stdout, end="")
 
 How arguments are translated
@@ -102,19 +101,28 @@ Working with results
 --------------------
 
 Every successful call returns an immutable ``CommandResult`` with ``args``,
-``returncode``, ``stdout``, and ``stderr``. Its ``lines`` property is a handy
-view for line-oriented output:
+``returncode``, ``stdout``, ``stderr``, and ``value``. By default, ``value`` is
+the unchanged stdout string.
+
+Use ``with_parser()`` to create an immutable command configured for a specific
+output format:
 
 .. code-block:: python
 
    from lincl import ls
 
-   result = ls()
-   for line in result.lines:
+   list_entries = ls.with_parser(str.splitlines)
+   result = list_entries()
+   for line in result.value:
        print(line)
 
-``lines`` splits display output; it does not understand the command's data
-format. In particular, Unix filenames may contain newlines. Use
+The original text remains available as ``result.stdout`` even after parsing.
+A parser receives stdout only and runs only after the command exits
+successfully. If parsing fails, ``OutputParseError`` retains the textual result
+on ``error.result`` and chains the parser's exception as its cause.
+
+``str.splitlines`` only splits display output; it does not understand the
+command's data format. In particular, Unix filenames may contain newlines. Use
 ``pathlib.Path.iterdir()`` when you need actual directory entries, and parse a
 command's machine-readable format when correctness depends on its structure.
 
@@ -125,7 +133,9 @@ instead of relying on command-name magic:
 
    from lincl import wc
 
-   word_count = int(wc("-w", "README.rst").stdout.split()[0])
+   parse_count = lambda output: int(output.split()[0])
+   count_words = wc.with_parser(parse_count)
+   word_count = count_words("-w", "README.rst").value
 
 Failures you can catch
 ----------------------
@@ -161,10 +171,9 @@ arguments translated into command-line options:
 
 .. code-block:: python
 
-   from lincl import ExecutionOptions, command
+   from lincl import ExecutionOptions, python3
 
-   python = command("python3")
-   result = python.run(
+   result = python3.run(
        "-c",
        "import os, sys; print(os.getcwd(), sys.stdin.read())",
        execution=ExecutionOptions(
@@ -191,7 +200,8 @@ that expect one flag followed by several values require positional arguments.
 Bytes mode and cancellation do not have public APIs yet.
 
 ``from lincl import *`` imports the stable Python API, not every executable on
-the host. Import commands by name or resolve them with ``command()``.
+the host. Import commands explicitly by name so missing executables fail at the
+import boundary.
 
 Command behavior also varies between distributions and command versions.
 ``lincl`` wraps what is installed; it does not install commands, emulate them,

@@ -29,7 +29,7 @@ class CommandNotFoundError(CommandError, ImportError):
 class CommandExecutionError(CommandError):
     """Raised when a command starts but exits unsuccessfully."""
 
-    def __init__(self, result: CommandResult) -> None:
+    def __init__(self, result: CommandResult[str]) -> None:
         self.result = result
         if result.returncode < 0:
             outcome = f"was terminated by signal {-result.returncode}"
@@ -56,6 +56,22 @@ class CommandExecutionError(CommandError):
     @property
     def stderr(self) -> str:
         return self.result.stderr
+
+
+class OutputParseError(CommandError):
+    """Raised when a parser cannot transform successful command output."""
+
+    def __init__(
+        self,
+        result: CommandResult[str],
+        reason: Exception,
+    ) -> None:
+        self.result = result
+        self.reason = reason
+        command = _render_command(result.args)
+        super().__init__(
+            f"Could not parse output from command {command}: {reason}"
+        )
 
 
 class CommandTimeoutError(CommandError):

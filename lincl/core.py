@@ -5,13 +5,14 @@ import shutil
 import subprocess
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import TypeAlias
+from typing import Callable, Generic, TypeAlias, TypeVar
 
 from lincl.exceptions import (
     CommandExecutionError,
     CommandLaunchError,
     CommandNotFoundError,
     CommandTimeoutError,
+    OutputParseError,
 )
 from lincl.models import CommandResult, ExecutionOptions
 
@@ -19,6 +20,12 @@ ScalarArgument: TypeAlias = str | int | float | os.PathLike[str]
 OptionValue: TypeAlias = (
     ScalarArgument | Sequence[ScalarArgument] | bool | None
 )
+Output = TypeVar("Output")
+ParsedOutput = TypeVar("ParsedOutput")
+
+
+def _identity(output: str) -> str:
+    return output
 
 
 def _stringify(value: ScalarArgument, description: str) -> str:
@@ -86,16 +93,17 @@ def _normalize_timeout_output(
 
 
 @dataclass(frozen=True, slots=True)
-class Command:
+class Command(Generic[Output]):
     """A resolved executable that can be called repeatedly."""
 
     executable: str
+    parser: Callable[[str], Output]
 
     def __call__(
         self,
         *arguments: ScalarArgument,
         **options: OptionValue,
-    ) -> CommandResult:
+    ) -> CommandResult[Output]:
         return self.run(*arguments, options=options)
 
     def run(
@@ -103,7 +111,7 @@ class Command:
         *arguments: ScalarArgument,
         options: Mapping[str, OptionValue] | None = None,
         execution: ExecutionOptions | None = None,
-    ) -> CommandResult:
+    ) -> CommandResult[Output]:
         """Run with explicit command options and process controls."""
         process_options = execution or ExecutionOptions()
         command_options = dict(options or {})
@@ -142,18 +150,38 @@ class Command:
         except OSError as error:
             raise CommandLaunchError(args, error) from error
 
-        result = CommandResult(
+        raw_result = CommandResult(
             args=args,
             returncode=completed.returncode,
             stdout=completed.stdout,
             stderr=completed.stderr,
+            value=completed.stdout,
         )
-        if not result.ok:
-            raise CommandExecutionError(result)
-        return result
+        if not raw_result.ok:
+            raise CommandExecutionError(raw_result)
+        try:
+            value = self.parser(raw_result.stdout)
+        except Exception as error:
+            raise OutputParseError(raw_result, error) from error
+        return CommandResult(
+            args=raw_result.args,
+            returncode=raw_result.returncode,
+            stdout=raw_result.stdout,
+            stderr=raw_result.stderr,
+            value=value,
+        )
+
+    def with_parser(
+        self,
+        parser: Callable[[str], ParsedOutput],
+    ) -> "Command[ParsedOutput]":
+        """Return a new command configured with an output parser."""
+        if not callable(parser):
+            raise TypeError("parser must be callable")
+        return Command(executable=self.executable, parser=parser)
 
 
-def command(name: str | os.PathLike[str]) -> Command:
+def _resolve_command(name: str | os.PathLike[str]) -> Command[str]:
     """Resolve an executable by name or path and cache its absolute path."""
     command_name = _stringify(name, "command name")
     if not command_name:
@@ -161,4 +189,4 @@ def command(name: str | os.PathLike[str]) -> Command:
     executable = shutil.which(command_name, mode=os.X_OK)
     if executable is None:
         raise CommandNotFoundError(command_name)
-    return Command(executable=os.path.abspath(executable))
+    return Command(executable=os.path.abspath(executable), parser=_identity)

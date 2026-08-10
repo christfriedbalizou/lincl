@@ -12,14 +12,15 @@ from lincl import (
     CommandResult,
     CommandTimeoutError,
     ExecutionOptions,
-    command,
+    OutputParseError,
     transcribe,
 )
+from lincl.core import _resolve_command
 
 
 @pytest.fixture
 def python_command():
-    return command(sys.executable)
+    return _resolve_command(sys.executable)
 
 
 def test_success_returns_structured_result(python_command):
@@ -30,7 +31,7 @@ def test_success_returns_structured_result(python_command):
     assert result.returncode == 0
     assert result.stdout == "first\nsecond\n"
     assert result.stderr == ""
-    assert result.lines == ["first", "second"]
+    assert result.value == result.stdout
     assert result.ok is True
 
 
@@ -38,7 +39,7 @@ def test_arguments_are_passed_without_shell_interpretation(python_command):
     value = "$(touch should-not-exist); * 'quoted'"
     result = python_command("-c", "import sys; print(sys.argv[1])", value)
 
-    assert result.lines == [value]
+    assert result.stdout.splitlines() == [value]
     assert not Path("should-not-exist").exists()
 
 
@@ -117,18 +118,62 @@ def test_execution_options_support_input_cwd_and_environment(
         execution=execution,
     )
 
-    assert result.lines == [str(tmp_path), "present", "hello"]
+    assert result.stdout.splitlines() == [str(tmp_path), "present", "hello"]
 
 
 def test_launch_error_is_typed(python_command):
     missing_executable = f"{python_command.executable}.missing"
-    missing_command = type(python_command)(missing_executable)
+    missing_command = type(python_command)(missing_executable, str)
 
     with pytest.raises(CommandLaunchError) as raised:
         missing_command()
 
     assert raised.value.args_vector == (missing_executable,)
     assert isinstance(raised.value.reason, OSError)
+
+
+def test_with_parser_returns_typed_value_and_keeps_raw_output(python_command):
+    parsed_command = python_command.with_parser(str.splitlines)
+
+    result = parsed_command("-c", "print('first'); print('second')")
+
+    assert result.value == ["first", "second"]
+    assert result.stdout == "first\nsecond\n"
+    assert parsed_command is not python_command
+    assert python_command("-c", "print('raw')").value == "raw\n"
+
+
+def test_parser_failure_preserves_raw_result(python_command):
+    parsed_command = python_command.with_parser(int)
+
+    with pytest.raises(OutputParseError) as raised:
+        parsed_command("-c", "print('not-an-integer')")
+
+    assert raised.value.result.stdout == "not-an-integer\n"
+    assert raised.value.result.value == "not-an-integer\n"
+    assert isinstance(raised.value.reason, ValueError)
+    assert raised.value.__cause__ is raised.value.reason
+
+
+def test_parser_does_not_run_for_failed_command(python_command):
+    parser_called = False
+
+    def parser(output):
+        nonlocal parser_called
+        parser_called = True
+        return output
+
+    parsed_command = python_command.with_parser(parser)
+
+    with pytest.raises(CommandExecutionError):
+        parsed_command("-c", "raise SystemExit(2)")
+
+    assert parser_called is False
+
+
+def test_with_parser_rejects_non_callable(python_command):
+    with pytest.raises(TypeError, match="parser must be callable"):
+        python_command.with_parser(None)
 
 
 @pytest.mark.parametrize(
