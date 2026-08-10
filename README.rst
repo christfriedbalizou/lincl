@@ -342,23 +342,25 @@ the wheel and source distribution.
 Releasing
 ---------
 
-This section is for maintainers. ``lincl.__version__`` is the canonical
-version. Prepare a release commit and tag with one of:
+This section is for maintainers. Releases are prepared automatically from
+Conventional Commits when package code, metadata, or locked Python dependencies
+change on ``main``. Release Please maintains a release pull request containing
+the next version and changelog. ``fix:`` commits produce patch releases,
+``feat:`` commits produce minor releases, and breaking changes produce major
+releases.
 
-.. code-block:: console
-
-   bumpversion patch
-   bumpversion minor
-   bumpversion major
-
-Push the release commit and tag, then publish a GitHub Release for that tag.
-The release workflow checks the version, tests and builds the tagged commit,
-attests the distributions, and sends those exact artifacts to PyPI through
-Trusted Publishing.
+Merging the release pull request creates the version tag and publishes a GitHub
+Release. That event starts the release workflow, which checks the version, runs
+the complete verification suite, builds and tests the tagged wheel and source
+distribution, attests those exact artifacts, and publishes them to PyPI through
+Trusted Publishing. A normal push or dependency update never publishes
+directly; it first goes through the release pull request and required checks.
 
 The GitHub ``pypi`` environment and the matching PyPI Trusted Publisher must be
 configured before the first release. The workflow does not use a stored PyPI
-password or API token.
+password or API token. Release automation uses the repository's configured
+GitHub App credentials, ``BOT_APP_ID`` and ``BOT_APP_PRIVATE_KEY``, so the
+GitHub Release can trigger the separate publishing workflow.
 
 License
 -------

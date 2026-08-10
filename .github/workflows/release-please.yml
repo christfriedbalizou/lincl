@@ -1,0 +1,47 @@
+name: Prepare release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - lincl/**
+      - requirements.in
+      - requirements.txt
+      - requirements-dev.in
+      - requirements-dev.txt
+      - setup.cfg
+      - setup.py
+      - pyproject.toml
+      - scripts/verify_installation.py
+      - release-please-config.json
+      - .release-please-manifest.json
+      - .github/workflows/release-please.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-please-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release:
+    name: Update release pull request
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ secrets.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-issues: write
+          permission-pull-requests: write
+      - name: Prepare or publish release
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json

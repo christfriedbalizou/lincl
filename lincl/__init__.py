@@ -15,7 +15,7 @@ from lincl.exceptions import (
 from lincl.models import CommandResult, ExecutionOptions
 
 __title__ = "lincl"
-__version__ = "1.0.0"
+__version__ = "1.0.3"
 __author__ = "Christfried BALIZOU"
 
 __all__ = [
