@@ -54,7 +54,7 @@ shallow checkout. This is a complete script, not pseudocode:
    manager = getattr(lincl, manager_name)
 
    if os.geteuid() != 0:
-       manager = lincl.sudo.subcommand(manager_name)
+       manager = getattr(lincl.sudo, manager_name)
 
    if manager_name == "apt-get":
        manager.update()

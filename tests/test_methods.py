@@ -166,11 +166,7 @@ def test_subcommands_can_be_nested_and_configured(monkeypatch):
     )
     monkeypatch.setattr(subprocess, "run", lambda *args, **kwargs: completed)
 
-    command = (
-        git.subcommand("remote")
-        .subcommand("show")
-        .configure(parser=str.splitlines)
-    )
+    command = git.remote.show.configure(parser=str.splitlines)
     result = command("origin", verbose=True)
 
     assert result.args == (
@@ -181,6 +177,25 @@ def test_subcommands_can_be_nested_and_configured(monkeypatch):
         "origin",
     )
     assert result.value == ["one", "two"]
+
+
+def test_runtime_subcommand_name_uses_attribute_lookup(monkeypatch):
+    from lincl import git
+
+    completed = subprocess.CompletedProcess(
+        args=(), returncode=0, stdout="", stderr=""
+    )
+    monkeypatch.setattr(subprocess, "run", lambda *args, **kwargs: completed)
+
+    helper = getattr(git, "credential-store")
+    result = helper("store", file="credentials")
+
+    assert result.args == (
+        git.executable,
+        "credential-store",
+        "--file=credentials",
+        "store",
+    )
 
 
 def test_run_attribute_is_a_subcommand(monkeypatch):
@@ -202,6 +217,7 @@ def test_run_attribute_is_a_subcommand(monkeypatch):
         "--quiet",
         "task",
     )
+    assert "subcommand" not in vars(type(git))
 
 
 def test_configure_applies_explicit_execution_options(monkeypatch):

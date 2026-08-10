@@ -224,7 +224,7 @@ class Command(Generic[Output]):
             execution=execution,
         )
 
-    def subcommand(self, name: str) -> "Command[Output]":
+    def _with_subcommand(self, name: str) -> "Command[Output]":
         rendered = _stringify(name, "subcommand name")
         if not rendered or rendered.startswith("-"):
             raise ValueError(f"invalid subcommand name: {name!r}")
@@ -311,18 +311,16 @@ class CommandCallable(Generic[Output]):
             resolved = resolved._with_execution(execution)
         return _as_callable(self._command_name, resolved)
 
-    def subcommand(self, name: str, /) -> CommandCallable[Output]:
-        return _as_callable(
-            f"{self._command_name} {name}",
-            self._resolved.subcommand(name),
-        )
-
     def __getattr__(self, name: str) -> CommandCallable[Output]:
         if name.startswith("_"):
             raise AttributeError(
                 f"{type(self).__name__!r} object has no attribute {name!r}"
             )
-        return self.subcommand(name.replace("_", "-"))
+        subcommand = name.replace("_", "-")
+        return _as_callable(
+            f"{self._command_name} {subcommand}",
+            self._resolved._with_subcommand(subcommand),
+        )
 
     def __repr__(self) -> str:
         return f"<command {self._command_name!r} at {self.executable!r}>"
