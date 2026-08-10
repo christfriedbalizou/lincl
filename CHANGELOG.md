@@ -1,5 +1,23 @@
 # Changelog
 
+## [4.0.0](https://github.com/christfriedbalizou/lincl/compare/v3.0.0...v4.0.0) (2026-08-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* Command callables no longer expose subcommand(). Chain attributes for static names and use getattr() for names selected at runtime.
+
+### Features
+
+* remove explicit subcommand method ([e79e45b](https://github.com/christfriedbalizou/lincl/commit/e79e45b3d8d7fb09c627925699795a6332cfb42f))
+
+
+### Documentation
+
+* remove release instructions ([cbcc27c](https://github.com/christfriedbalizou/lincl/commit/cbcc27ccc86bc7f3418f32c15682f5b76a1c763b))
+* showcase real-world Linux automation ([eeb3099](https://github.com/christfriedbalizou/lincl/commit/eeb3099cd002f9d08f774037500165facbdba90d))
+* simplify subcommand example ([616cf4e](https://github.com/christfriedbalizou/lincl/commit/616cf4ee5eb4278dd4c2db6d15c87df4517d40f6))
+
 ## [3.0.0](https://github.com/christfriedbalizou/lincl/compare/v2.0.0...v3.0.0) (2026-08-10)
 
 
