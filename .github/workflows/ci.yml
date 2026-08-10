@@ -107,8 +107,8 @@ jobs:
               "${PYTHON_COMMAND}" -m venv /tmp/lincl-venv
               /tmp/lincl-venv/bin/python -m pip install .
               cd /tmp
-              /tmp/lincl-venv/bin/python -c \
-                "from lincl import echo; output, error = echo(\"lincl\"); assert output == \"lincl\\n\" and not error"
+              /tmp/lincl-venv/bin/python \
+                /tmp/lincl-source/scripts/verify_installation.py
             '
 
   build:
@@ -140,6 +140,8 @@ jobs:
           actual_version="$(/tmp/lincl-wheel/bin/python -c \
             'import lincl; print(lincl.__version__)')"
           test "${actual_version}" = "${expected_version}"
+          /tmp/lincl-wheel/bin/python \
+            "${GITHUB_WORKSPACE}/scripts/verify_installation.py"
       - name: Test source distribution
         run: |
           expected_version="$(python -c \
@@ -150,6 +152,8 @@ jobs:
           actual_version="$(/tmp/lincl-sdist/bin/python -c \
             'import lincl; print(lincl.__version__)')"
           test "${actual_version}" = "${expected_version}"
+          /tmp/lincl-sdist/bin/python \
+            "${GITHUB_WORKSPACE}/scripts/verify_installation.py"
       - name: Upload distributions
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:

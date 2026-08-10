@@ -16,9 +16,9 @@ build: clean
 check-dist: build
 	python -m twine check --strict dist/*
 	python -m pip install --force-reinstall --no-deps dist/*.whl
-	cd /tmp && python -c "import lincl; assert lincl.__version__"
+	cd /tmp && python "$(CURDIR)/scripts/verify_installation.py"
 	python -m pip install --force-reinstall --no-deps dist/*.tar.gz
-	cd /tmp && python -c "import lincl; assert lincl.__version__"
+	cd /tmp && python "$(CURDIR)/scripts/verify_installation.py"
 
 upgrade-reqs:
 	pip-compile --allow-unsafe --generate-hashes --no-emit-index-url requirements.in

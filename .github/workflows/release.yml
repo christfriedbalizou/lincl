@@ -47,15 +47,15 @@ jobs:
           /tmp/lincl-release-wheel/bin/python -m pip install \
             --no-deps dist/*.whl
           cd /tmp
-          /tmp/lincl-release-wheel/bin/python -c \
-            "import lincl; assert lincl.__version__"
+          /tmp/lincl-release-wheel/bin/python \
+            "${GITHUB_WORKSPACE}/scripts/verify_installation.py"
           cd "${GITHUB_WORKSPACE}"
           python -m venv /tmp/lincl-release-sdist
           /tmp/lincl-release-sdist/bin/python -m pip install \
             --no-deps dist/*.tar.gz
           cd /tmp
-          /tmp/lincl-release-sdist/bin/python -c \
-            "import lincl; assert lincl.__version__"
+          /tmp/lincl-release-sdist/bin/python \
+            "${GITHUB_WORKSPACE}/scripts/verify_installation.py"
       - name: Upload distributions
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
