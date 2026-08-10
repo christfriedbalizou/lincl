@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.0](https://github.com/christfriedbalizou/lincl/compare/v1.1.1...v1.2.0) (2026-08-10)
+
+
+### Features
+
+* support command subcommands ([aa7b22f](https://github.com/christfriedbalizou/lincl/commit/aa7b22f0db244d6a46685fdf5719ee89c0669e13))
+
+
+### Documentation
+
+* reduce PyPI badge cache ([058dab9](https://github.com/christfriedbalizou/lincl/commit/058dab94157e6484710e2eb5b6cb59f52029a6cd))
+
 ## [1.1.1](https://github.com/christfriedbalizou/lincl/compare/v1.1.0...v1.1.1) (2026-08-10)
 
 
