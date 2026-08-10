@@ -1,0 +1,36 @@
+fail_fast: true
+
+repos:
+  - repo: https://github.com/MarcoGorelli/absolufy-imports
+    rev: 1683a63d850e065495c05b771e4a20db010a58e7
+    hooks:
+      - id: absolufy-imports
+
+  - repo: https://github.com/psf/black
+    rev: 87928e6d6761a4a6d22250e1fee5601b3998086e
+    hooks:
+      - id: black
+        args: [--line-length=79]
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: debug-statements
+
+  - repo: https://github.com/PyCQA/isort
+    rev: 3459bdee0962449aad91235273c3fd1306dfebe5
+    hooks:
+      - id: isort
+        args: [--profile=black, --line-length=79]
+
+  - repo: https://github.com/asottile/yesqa
+    rev: f2ae90cf9e1661ade79d0881186ce4fd7ba6ee79
+    hooks:
+      - id: yesqa
+
+  - repo: https://github.com/PyCQA/flake8
+    rev: d93590f5be797aabb60e3b09f2f52dddb02f349f
+    hooks:
+      - id: flake8

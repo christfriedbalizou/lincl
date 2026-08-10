@@ -5,6 +5,7 @@ Email: christfriedbalizou@gmail.com
 Github: https://github.com/ChristfriedBalizou
 Description: Test dynamic imports
 """
+
 import pytest
 
 
@@ -18,10 +19,12 @@ def test_script_not_found():
 def test_script_found():
     # Check import of an existing script works
     from lincl import ls
+
     assert callable(ls)
 
 
 def test_script_found_with_alias():
     # Try to use alias "as"
     from lincl import cp as copy
+
     assert callable(copy)

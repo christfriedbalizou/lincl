@@ -5,16 +5,17 @@ Email: christfriedbalizou@gmail.com
 Github: https://github.com/ChristfriedBalizou
 Description: Test dynamic loaded methods
 """
+
 import os
+
 import pytest
 
-from lincl import echo, cat, touch
+from lincl import cat, echo, touch
 
 
 def test_return_code_none_zero():
     with pytest.raises(
-        RuntimeError,
-        match="foobar: No such file or directory"
+        RuntimeError, match="foobar: No such file or directory"
     ):
         cat("foobar", show_tabs=True)
 

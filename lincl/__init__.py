@@ -28,14 +28,15 @@ Description:
 
     NOTICE: from package import * # Is not supported
 """
+
 __title__ = "lincl"
-__version__ = "1.0"
+__version__ = "1.0.0"
 __author__ = "Christfried BALIZOU"
 
 import os
 import shutil
 import subprocess
-from typing import List, Dict, Any, Callable
+from typing import Any, Callable, Dict, List
 
 
 def __getattr__(name) -> Callable:
@@ -47,7 +48,7 @@ def __getattr__(name) -> Callable:
     try:
         return command(name)
     except Exception:
-        print(f'ERROR while attempting to dynamically load {name}:')
+        print(f"ERROR while attempting to dynamically load {name}:")
         raise
 
 
@@ -148,7 +149,7 @@ def transcripte(*args: List[str], **kwargs: Dict[str, Any]) -> List[str]:
 
 
 def loader(method: str):
-    """ Load an executable program
+    """Load an executable program
 
     This will load the given Linux command through a subprocess.Popen
     and will return the output.
@@ -169,8 +170,7 @@ def loader(method: str):
 
     @controller
     def program(*args: List[str], **kwargs: Dict[str, str]):
-        """Simply return the program path
-        """
+        """Simply return the program path"""
         return script
 
     return program
