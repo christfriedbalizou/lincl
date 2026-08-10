@@ -27,7 +27,7 @@ def test_release_automation_watches_package_inputs():
     assert "lincl/**" in workflow
     assert "requirements.in" in workflow
     assert "requirements-dev.in" in workflow
-    assert "README.rst" in workflow
+    assert "README.md" in workflow
     assert "setup.cfg" in workflow
     assert "BOT_APP_PRIVATE_KEY" in workflow
     assert "googleapis/release-please-action@" in workflow
