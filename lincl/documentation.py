@@ -48,12 +48,24 @@ def _read_manual(command_name: str) -> str | None:
     return _plain_text(completed.stdout)
 
 
-def command_doc(command_name: str, executable: str) -> str:
-    manual = _read_manual(command_name)
-    manual_text = manual or (
-        f"No local manual entry was found. Run `man {command_name}` on a "
-        "system that provides one."
-    )
+def command_doc(
+    command_name: str,
+    executable: str,
+    *,
+    include_manual: bool = True,
+) -> str:
+    manual = _read_manual(command_name) if include_manual else None
+    if manual:
+        manual_text = manual
+    elif include_manual:
+        manual_text = (
+            f"No local manual entry was found. Run `man {command_name}` on a "
+            "system that provides one."
+        )
+    else:
+        manual_text = (
+            "See the parent command's manual for subcommand-specific usage."
+        )
     return f"""Run the installed `{command_name}` command as a Python callable.
 
 Python usage:
@@ -68,6 +80,8 @@ The result behaves like its parsed value and also exposes `args`, `returncode`,
 `stdout`, and `stderr`. Use `.value` when the concrete parsed type is required.
 Use `result.parser(callable)` for one result, or `command.configure(parser=...)`
 to create a reusable parsed command.
+Use `command.subcommand(arg)` or `command.arg` when options belong after a
+subcommand, for example `git.clone(url, destination, depth=1)`.
 Use `.run(..., execution=ExecutionOptions(...))` for timeouts, input,
 environment variables, working directories, and decoding controls. Project
 defaults for encoding, decoding errors, and timeout can be set in

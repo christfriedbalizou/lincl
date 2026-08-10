@@ -1,4 +1,3 @@
-import inspect
 import pydoc
 import shutil
 
@@ -23,7 +22,6 @@ def test_installed_command_is_resolved_once():
 
     from lincl import ls
 
-    assert inspect.isfunction(ls)
     assert ls.executable == executable
     assert callable(ls)
 
@@ -31,7 +29,6 @@ def test_installed_command_is_resolved_once():
 def test_dynamic_command_can_be_aliased():
     from lincl import cp as copy
 
-    assert inspect.isfunction(copy)
     assert copy.__name__ == "cp"
 
 
@@ -40,7 +37,7 @@ def test_dynamic_command_has_pythonic_help():
 
     documentation = pydoc.render_doc(ls, renderer=pydoc.plaintext)
 
-    assert "function ls in module lincl" in documentation
+    assert "CommandCallable in module lincl" in documentation
     assert "ls(*arguments, **options)" in documentation
     assert "CommandResult" in documentation
     assert "result.parser(callable)" in documentation

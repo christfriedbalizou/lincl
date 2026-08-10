@@ -61,16 +61,29 @@ Import aliases work as you would expect:
    result = version_control("version")
    print(result.stdout, end="")
 
+Commands with subcommands support attribute chaining. Options are placed after
+the selected subcommand, where tools such as Git expect them:
+
+.. code-block:: python
+
+   from lincl import git
+
+   result = git.clone(repository_url, destination, depth=1)
+
+That call runs ``git clone --depth=1 REPOSITORY_URL DESTINATION``. Use the
+explicit ``git.subcommand("clone")`` form when a subcommand conflicts with a
+``lincl`` API attribute such as ``run``, ``configure``, or ``executable``.
+
 Python help, backed by the system manual
 ----------------------------------------
 
-Dynamic commands are real function-like objects with useful interactive help:
+Dynamic commands are callable objects with useful interactive help:
 
 .. code-block:: pycon
 
    >>> from lincl import ls
    >>> help(ls)
-   Help on function ls in module lincl:
+   Help on CommandCallable in module lincl:
 
    ls(*arguments, **options)
        Run the installed `ls` command as a Python callable.

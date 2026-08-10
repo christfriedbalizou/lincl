@@ -1,5 +1,7 @@
 """Command discovery, argument translation, and execution."""
 
+from __future__ import annotations
+
 import os
 import shutil
 import subprocess
@@ -9,10 +11,8 @@ from inspect import Parameter, Signature
 from typing import (
     Callable,
     Generic,
-    Protocol,
     TypeAlias,
     TypeVar,
-    cast,
 )
 
 from lincl.configuration import load_execution_options
@@ -38,29 +38,6 @@ _HELP_SIGNATURE = Signature(
         Parameter("options", Parameter.VAR_KEYWORD),
     )
 )
-
-
-class CommandCallable(Protocol[Output]):
-    executable: str
-
-    def __call__(
-        self,
-        *arguments: ScalarArgument,
-        **options: OptionValue,
-    ) -> CommandResult[Output]: ...
-
-    def run(
-        self,
-        *arguments: ScalarArgument,
-        options: Mapping[str, OptionValue] | None = None,
-        execution: ExecutionOptions | None = None,
-    ) -> CommandResult[Output]: ...
-
-    def configure(
-        self,
-        *,
-        parser: Callable[[str], ParsedOutput],
-    ) -> "CommandCallable[ParsedOutput]": ...
 
 
 def _identity(output: str) -> str:
@@ -137,6 +114,7 @@ class Command(Generic[Output]):
 
     executable: str
     parser: Callable[[str], Output]
+    prefix: tuple[str, ...] = ()
 
     def __call__(
         self,
@@ -156,6 +134,7 @@ class Command(Generic[Output]):
         command_options = dict(options or {})
         args = (
             self.executable,
+            *self.prefix,
             *transcribe(*arguments, **command_options),
         )
         environment = (
@@ -217,7 +196,21 @@ class Command(Generic[Output]):
     ) -> "Command[ParsedOutput]":
         if not callable(parser):
             raise TypeError("parser must be callable")
-        return Command(executable=self.executable, parser=parser)
+        return Command(
+            executable=self.executable,
+            parser=parser,
+            prefix=self.prefix,
+        )
+
+    def subcommand(self, name: str) -> "Command[Output]":
+        rendered = _stringify(name, "subcommand name")
+        if not rendered or rendered.startswith("-"):
+            raise ValueError(f"invalid subcommand name: {name!r}")
+        return Command(
+            executable=self.executable,
+            parser=self.parser,
+            prefix=(*self.prefix, rendered),
+        )
 
 
 def _resolve_command(name: str | os.PathLike[str]) -> Command[str]:
@@ -234,30 +227,71 @@ def _as_callable(
     command_name: str,
     resolved: Command[Output],
 ) -> CommandCallable[Output]:
-    def program(
+    return CommandCallable(command_name, resolved)
+
+
+class CommandCallable(Generic[Output]):
+    def __init__(self, command_name: str, resolved: Command[Output]) -> None:
+        self._command_name = command_name
+        self._resolved = resolved
+        self.__name__ = command_name.rsplit(" ", 1)[-1]
+        self.__qualname__ = command_name.replace(" ", ".")
+        self.__module__ = "lincl"
+        self.__doc__ = command_doc(
+            command_name,
+            resolved.executable,
+            include_manual=not resolved.prefix,
+        )
+        self.__signature__ = _HELP_SIGNATURE
+
+    @property
+    def executable(self) -> str:
+        return self._resolved.executable
+
+    def __call__(
+        self,
         *arguments: ScalarArgument,
         **options: OptionValue,
     ) -> CommandResult[Output]:
-        return resolved(*arguments, **options)
+        return self._resolved(*arguments, **options)
+
+    def run(
+        self,
+        *arguments: ScalarArgument,
+        options: Mapping[str, OptionValue] | None = None,
+        execution: ExecutionOptions | None = None,
+    ) -> CommandResult[Output]:
+        return self._resolved.run(
+            *arguments,
+            options=options,
+            execution=execution,
+        )
 
     def configure(
+        self,
         *,
         parser: Callable[[str], ParsedOutput],
     ) -> CommandCallable[ParsedOutput]:
         return _as_callable(
-            command_name,
-            resolved.configure(parser=parser),
+            self._command_name,
+            self._resolved.configure(parser=parser),
         )
 
-    program.__name__ = command_name
-    program.__qualname__ = command_name
-    program.__module__ = "lincl"
-    program.__doc__ = command_doc(command_name, resolved.executable)
-    setattr(program, "__signature__", _HELP_SIGNATURE)
-    setattr(program, "run", resolved.run)
-    setattr(program, "configure", configure)
-    setattr(program, "executable", resolved.executable)
-    return cast(CommandCallable[Output], program)
+    def subcommand(self, name: str, /) -> CommandCallable[Output]:
+        return _as_callable(
+            f"{self._command_name} {name}",
+            self._resolved.subcommand(name),
+        )
+
+    def __getattr__(self, name: str) -> CommandCallable[Output]:
+        if name.startswith("_"):
+            raise AttributeError(
+                f"{type(self).__name__!r} object has no attribute {name!r}"
+            )
+        return self.subcommand(name.replace("_", "-"))
+
+    def __repr__(self) -> str:
+        return f"<command {self._command_name!r} at {self.executable!r}>"
 
 
 def _load_command(name: str) -> CommandCallable[str]:

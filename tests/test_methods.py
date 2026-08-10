@@ -143,6 +143,50 @@ def test_configure_returns_typed_value_and_keeps_raw_output(python_command):
     assert python_command("-c", "print('raw')").value == "raw\n"
 
 
+def test_subcommand_places_options_after_subcommand(monkeypatch):
+    from lincl import git
+
+    completed = subprocess.CompletedProcess(
+        args=(), returncode=0, stdout="", stderr=""
+    )
+    monkeypatch.setattr(subprocess, "run", lambda *args, **kwargs: completed)
+
+    result = git.clone("URL", "DESTINATION", depth=1)
+
+    assert result.args == (
+        git.executable,
+        "clone",
+        "--depth=1",
+        "URL",
+        "DESTINATION",
+    )
+
+
+def test_subcommands_can_be_nested_and_configured(monkeypatch):
+    from lincl import git
+
+    completed = subprocess.CompletedProcess(
+        args=(), returncode=0, stdout="one\ntwo\n", stderr=""
+    )
+    monkeypatch.setattr(subprocess, "run", lambda *args, **kwargs: completed)
+
+    command = (
+        git.subcommand("remote")
+        .subcommand("show")
+        .configure(parser=str.splitlines)
+    )
+    result = command("origin", verbose=True)
+
+    assert result.args == (
+        git.executable,
+        "remote",
+        "show",
+        "--verbose",
+        "origin",
+    )
+    assert result.value == ["one", "two"]
+
+
 def test_per_call_parser_returns_value_proxy_with_metadata(python_command):
     entries = python_command("-c", "print('a.txt'); print('b.txt')").parser(
         str.splitlines
