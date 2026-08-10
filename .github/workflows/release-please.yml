@@ -9,6 +9,7 @@ on:
       - requirements.txt
       - requirements-dev.in
       - requirements-dev.txt
+      - README.rst
       - setup.cfg
       - setup.py
       - pyproject.toml
