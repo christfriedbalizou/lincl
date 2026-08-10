@@ -72,7 +72,7 @@ Dynamic commands are real function-like objects with useful interactive help:
    >>> help(ls)
    Help on function ls in module lincl:
 
-   ls(*arguments, parser=None, **options)
+   ls(*arguments, **options)
        Run the installed `ls` command as a Python callable.
        ...
 
@@ -126,14 +126,13 @@ Every successful call returns an immutable ``CommandResult`` with ``args``,
 ``returncode``, ``stdout``, ``stderr``, and ``value``. By default, ``value`` is
 the unchanged stdout string.
 
-Pass ``parser=`` for one call, or use ``with_parser()`` to create a reusable
-command configured for a specific output format:
+Call ``with_parser()`` on one result to parse that call's captured stdout:
 
 .. code-block:: python
 
    from lincl import ls
 
-   entries = ls("./", parser=str.splitlines)
+   entries = ls("./").with_parser(parser=str.splitlines)
    entries.append("another-entry")
    entries = entries + ["one-more-entry"]
 
@@ -160,6 +159,22 @@ A parser receives stdout only and runs only after the command exits
 successfully. If parsing fails, ``OutputParseError`` retains the textual result
 on ``error.result`` and chains the parser's exception as its cause.
 
+For repeated calls, create a configured command. Commands are immutable, so
+the original remains unchanged and safe for concurrent callers:
+
+.. code-block:: python
+
+   parsed_ls = ls.with_parser(parser=str.splitlines)
+   entries = parsed_ls("./")
+
+Reassignment is also valid when every following call in the current scope
+should use that parser:
+
+.. code-block:: python
+
+   ls = ls.with_parser(parser=str.splitlines)
+   entries = ls("./")
+
 ``str.splitlines`` only splits display output; it does not understand the
 command's data format. In particular, Unix filenames may contain newlines. Use
 ``pathlib.Path.iterdir()`` when you need actual directory entries, and parse a
@@ -175,7 +190,7 @@ instead of relying on command-name magic:
    def parse_count(output):
        return int(output.split()[0])
 
-   count_words = wc.with_parser(parse_count)
+   count_words = wc.with_parser(parser=parse_count)
    word_count = count_words("-w", "README.rst").value
 
 Failures you can catch
@@ -231,9 +246,8 @@ only a few variables. Output is decoded as UTF-8 with ``surrogateescape`` by
 default so unexpected bytes can be round-tripped. Both settings are
 configurable.
 
-The ``parser`` keyword is reserved for output parsing. A program that genuinely
-needs a ``--parser`` command-line option can receive it through
-``run(options={"parser": ...})``.
+Every keyword passed directly to a command belongs to that command. ``lincl``
+does not reserve ``parser`` or silently remove it from the argument vector.
 
 Project defaults
 ----------------

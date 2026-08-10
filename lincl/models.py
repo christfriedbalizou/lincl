@@ -4,9 +4,10 @@ import codecs
 import math
 import os
 from dataclasses import dataclass
-from typing import Any, Generic, Iterator, Mapping, TypeVar, cast
+from typing import Any, Callable, Generic, Iterator, Mapping, TypeVar, cast
 
 Output = TypeVar("Output")
+ParsedOutput = TypeVar("ParsedOutput")
 
 
 @dataclass(frozen=True, slots=True)
@@ -71,6 +72,28 @@ class CommandResult(Generic[Output]):
             stderr=self.stderr,
             value=value,
         )
+
+    def with_parser(
+        self,
+        *,
+        parser: Callable[[str], ParsedOutput],
+    ) -> "CommandResult[ParsedOutput]":
+        if not callable(parser):
+            raise TypeError("parser must be callable")
+        raw_result = CommandResult(
+            args=self.args,
+            returncode=self.returncode,
+            stdout=self.stdout,
+            stderr=self.stderr,
+            value=self.stdout,
+        )
+        try:
+            value = parser(self.stdout)
+        except Exception as error:
+            from lincl.exceptions import OutputParseError
+
+            raise OutputParseError(raw_result, error) from error
+        return self._replace_value(value)
 
     @property
     def ok(self) -> bool:

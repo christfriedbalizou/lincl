@@ -41,7 +41,7 @@ def test_dynamic_command_has_pythonic_help():
     documentation = pydoc.render_doc(ls, renderer=pydoc.plaintext)
 
     assert "function ls in module lincl" in documentation
-    assert "ls(*arguments, parser=None, **options)" in documentation
+    assert "ls(*arguments, **options)" in documentation
     assert "CommandResult" in documentation
     assert "System manual:" in documentation
     assert "class Command" not in documentation

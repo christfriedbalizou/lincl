@@ -7,14 +7,12 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from inspect import Parameter, Signature
 from typing import (
-    Any,
     Callable,
     Generic,
     Protocol,
     TypeAlias,
     TypeVar,
     cast,
-    overload,
 )
 
 from lincl.configuration import load_execution_options
@@ -37,7 +35,6 @@ ParsedOutput = TypeVar("ParsedOutput")
 _HELP_SIGNATURE = Signature(
     parameters=(
         Parameter("arguments", Parameter.VAR_POSITIONAL),
-        Parameter("parser", Parameter.KEYWORD_ONLY, default=None),
         Parameter("options", Parameter.VAR_KEYWORD),
     )
 )
@@ -49,9 +46,8 @@ class CommandCallable(Protocol[Output]):
     def __call__(
         self,
         *arguments: ScalarArgument,
-        parser: Callable[[str], Any] | None = None,
         **options: OptionValue,
-    ) -> CommandResult[Any]: ...
+    ) -> CommandResult[Output]: ...
 
     def run(
         self,
@@ -62,6 +58,7 @@ class CommandCallable(Protocol[Output]):
 
     def with_parser(
         self,
+        *,
         parser: Callable[[str], ParsedOutput],
     ) -> "CommandCallable[ParsedOutput]": ...
 
@@ -141,30 +138,11 @@ class Command(Generic[Output]):
     executable: str
     parser: Callable[[str], Output]
 
-    @overload
     def __call__(
         self,
         *arguments: ScalarArgument,
-        parser: None = None,
         **options: OptionValue,
-    ) -> CommandResult[Output]: ...
-
-    @overload
-    def __call__(
-        self,
-        *arguments: ScalarArgument,
-        parser: Callable[[str], ParsedOutput],
-        **options: OptionValue,
-    ) -> CommandResult[ParsedOutput]: ...
-
-    def __call__(
-        self,
-        *arguments: ScalarArgument,
-        parser: Callable[[str], Any] | None = None,
-        **options: OptionValue,
-    ) -> CommandResult[Any]:
-        if parser is not None:
-            return self.with_parser(parser).run(*arguments, options=options)
+    ) -> CommandResult[Output]:
         return self.run(*arguments, options=options)
 
     def run(
@@ -234,6 +212,7 @@ class Command(Generic[Output]):
 
     def with_parser(
         self,
+        *,
         parser: Callable[[str], ParsedOutput],
     ) -> "Command[ParsedOutput]":
         if not callable(parser):
@@ -257,15 +236,18 @@ def _as_callable(
 ) -> CommandCallable[Output]:
     def program(
         *arguments: ScalarArgument,
-        parser: Callable[[str], Any] | None = None,
         **options: OptionValue,
-    ) -> CommandResult[Any]:
-        return resolved(*arguments, parser=parser, **options)
+    ) -> CommandResult[Output]:
+        return resolved(*arguments, **options)
 
     def with_parser(
+        *,
         parser: Callable[[str], ParsedOutput],
     ) -> CommandCallable[ParsedOutput]:
-        return _as_callable(command_name, resolved.with_parser(parser))
+        return _as_callable(
+            command_name,
+            resolved.with_parser(parser=parser),
+        )
 
     program.__name__ = command_name
     program.__qualname__ = command_name

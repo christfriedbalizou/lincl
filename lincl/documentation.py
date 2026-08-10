@@ -57,15 +57,17 @@ def command_doc(command_name: str, executable: str) -> str:
     return f"""Run the installed `{command_name}` command as a Python callable.
 
 Python usage:
-    {command_name}(*arguments, parser=None, **options) -> CommandResult
+    {command_name}(*arguments, **options) -> CommandResult
 
 `arguments` are passed positionally. Keyword names become command options:
 `a=True` becomes `-a`, `all=True` becomes `--all`, and underscores become
-hyphens. False and None omit an option. Use `parser=` to transform stdout;
-the default value is the unchanged string.
+hyphens. False and None omit an option. The default result value is the
+unchanged stdout string.
 
 The result behaves like its parsed value and also exposes `args`, `returncode`,
 `stdout`, and `stderr`. Use `.value` when the concrete parsed type is required.
+Use `result.with_parser(parser=...)` for one result, or
+`command.with_parser(parser=...)` to create a reusable parsed command.
 Use `.run(..., execution=ExecutionOptions(...))` for timeouts, input,
 environment variables, working directories, and decoding controls. Project
 defaults for encoding, decoding errors, and timeout can be set in
