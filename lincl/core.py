@@ -194,14 +194,12 @@ class Command(Generic[Output]):
         self,
         parser: Callable[[str], ParsedOutput],
     ) -> "Command[ParsedOutput]":
-        """Return a new command configured with an output parser."""
         if not callable(parser):
             raise TypeError("parser must be callable")
         return Command(executable=self.executable, parser=parser)
 
 
 def _resolve_command(name: str | os.PathLike[str]) -> Command[str]:
-    """Resolve an executable by name or path and cache its absolute path."""
     command_name = _stringify(name, "command name")
     if not command_name:
         raise ValueError("command name must not be empty")

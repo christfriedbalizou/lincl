@@ -32,12 +32,10 @@ __all__ = [
 
 
 def __getattr__(name: str) -> Any:
-    """Resolve a missing public attribute as an installed executable."""
     if name.startswith("_"):
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
     return _resolve_command(name)
 
 
 def __dir__() -> list[str]:
-    """Return the stable public API; host commands are resolved on demand."""
     return sorted(__all__)

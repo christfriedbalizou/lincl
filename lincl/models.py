@@ -18,7 +18,6 @@ class CommandResult(Generic[Output]):
     value: Output
 
     def __getattr__(self, name: str) -> Any:
-        """Delegate value-specific attributes and methods."""
         return getattr(self.value, name)
 
     def __str__(self) -> str:
@@ -73,7 +72,6 @@ class CommandResult(Generic[Output]):
 
     @property
     def ok(self) -> bool:
-        """Report whether the process exited successfully."""
         return self.returncode == 0
 
 
