@@ -1,8 +1,9 @@
 name: Dependabot auto-merge
 
 on:
-  pull_request_target:
-    types: [opened, synchronize, reopened]
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
 
 permissions:
   contents: read
@@ -10,8 +11,10 @@ permissions:
 
 jobs:
   enable-auto-merge:
-    name: Enable auto-merge after required checks
-    if: github.actor == 'dependabot[bot]'
+    name: Merge Dependabot update after successful checks
+    if: >-
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: Generate GitHub App token
@@ -22,11 +25,26 @@ jobs:
           private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
           permission-contents: write
           permission-pull-requests: write
-      - name: Read Dependabot metadata
-        id: metadata
-        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
-      - name: Enable squash auto-merge
+      - name: Find Dependabot pull request
+        id: pull-request
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          PULL_REQUEST_URL: ${{ github.event.pull_request.html_url }}
-        run: gh pr merge --auto --squash "${PULL_REQUEST_URL}"
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          pull_request_url="$(gh api \
+            "repos/${GITHUB_REPOSITORY}/commits/${HEAD_SHA}/pulls" \
+            --jq 'map(select(
+              .state == "open" and .user.login == "dependabot[bot]"
+            )) | first | .html_url // empty')"
+          test -n "${pull_request_url}"
+          echo "url=${pull_request_url}" >> "${GITHUB_OUTPUT}"
+      - name: Wait for remaining checks
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          PULL_REQUEST_URL: ${{ steps.pull-request.outputs.url }}
+        run: gh pr checks --watch --fail-fast "${PULL_REQUEST_URL}"
+      - name: Squash and merge update
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          PULL_REQUEST_URL: ${{ steps.pull-request.outputs.url }}
+        run: gh pr merge --squash "${PULL_REQUEST_URL}"
