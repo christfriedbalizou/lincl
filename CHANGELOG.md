@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.0.0](https://github.com/christfriedbalizou/lincl/compare/v2.0.0...v3.0.0) (2026-08-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* Dynamic commands no longer expose a run() execution method. Configure explicit process controls with configure(execution=ExecutionOptions(...)); attribute access such as docker.run() now invokes the real run subcommand.
+
+### Features
+
+* treat run as a command subcommand ([0221b2d](https://github.com/christfriedbalizou/lincl/commit/0221b2d41958e418a51e827a7398260ef92261ee))
+
 ## [2.0.0](https://github.com/christfriedbalizou/lincl/compare/v1.2.0...v2.0.0) (2026-08-10)
 
 
