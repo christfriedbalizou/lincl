@@ -268,23 +268,6 @@ Output capture, exit checking, and ``shell=False`` are safety and result-model
 invariants and cannot be weakened by project configuration. Unknown or invalid
 settings raise ``ConfigurationError`` with the source path.
 
-Project status
---------------
-
-``lincl`` is small and usable, but its execution API is still evolving. It
-captures stdout and stderr in memory, so it is not yet suitable for unbounded
-or streaming output. Lists are comma-separated; repeated options and commands
-that expect one flag followed by several values require positional arguments.
-Bytes mode and cancellation do not have public APIs yet.
-
-``from lincl import *`` imports the stable Python API, not every executable on
-the host. Import commands explicitly by name so missing executables fail at the
-import boundary.
-
-Command behavior also varies between distributions and command versions.
-``lincl`` wraps what is installed; it does not install commands, emulate them,
-or grant additional privileges.
-
 Security
 --------
 
