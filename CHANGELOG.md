@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.0](https://github.com/christfriedbalizou/lincl/compare/v1.2.0...v2.0.0) (2026-08-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* CommandCallable and transcribe are no longer exported from lincl. Import commands dynamically and use CommandResult, ExecutionOptions, and the exception types for programmatic handling.
+
+### Features
+
+* restrict public API to supported types ([cd5a57b](https://github.com/christfriedbalizou/lincl/commit/cd5a57b97ec13748bbb4d480ac189454414a5abc))
+
 ## [1.2.0](https://github.com/christfriedbalizou/lincl/compare/v1.1.1...v1.2.0) (2026-08-10)
 
 
