@@ -11,136 +11,6 @@ flow, exceptions, and testability. There is no shell interpolation: ``lincl``
 builds an argument vector, captures output, and turns failures into structured
 exceptions.
 
-A real automation script
-------------------------
-
-Suppose you want to package the committed files in a Git repository, compress
-the archive, calculate its checksum, and report what you produced. Here is the
-complete script:
-
-.. code-block:: python
-
-   #!/usr/bin/env python3
-   from pathlib import Path
-
-   from lincl import du, git, gzip, sha256sum
-
-   archive = Path("dist/source.tar")
-   archive.parent.mkdir(parents=True, exist_ok=True)
-
-   tracked_files = git.ls_files().parser(str.splitlines)
-   if not tracked_files:
-       raise RuntimeError("the repository has no tracked files")
-
-   git.archive("HEAD", format="tar", output=archive)
-   gzip(archive, force=True)
-
-   bundle = archive.with_suffix(".tar.gz")
-   checksum = sha256sum(bundle).parser(lambda output: output.split()[0])
-   size = du(bundle, human_readable=True).parser(lambda output: output.split()[0])
-
-   print(f"Packed {len(tracked_files)} files into {bundle} ({size.value})")
-   print(f"SHA-256: {checksum.value}")
-
-The Python reads like the commands you would write by hand:
-
-.. code-block:: console
-
-   git ls-files
-   git archive --format=tar --output=dist/source.tar HEAD
-   gzip --force dist/source.tar
-   sha256sum dist/source.tar.gz
-   du --human-readable dist/source.tar.gz
-
-Notice that ``git.ls_files`` and ``git.archive`` are ordinary Git subcommands,
-not special lincl integrations. Attribute chaining preserves their position in
-the argument vector, while keyword arguments become their options.
-
-Why not just Bash?
-~~~~~~~~~~~~~~~~~~
-
-The Bash version is compact, but parsed output, quoting, and error reporting
-belong to the script:
-
-.. code-block:: bash
-
-   #!/usr/bin/env bash
-   set -euo pipefail
-
-   archive=dist/source.tar
-   mkdir -p "$(dirname "${archive}")"
-
-   mapfile -t tracked_files < <(git ls-files)
-   if (( ${#tracked_files[@]} == 0 )); then
-     printf 'the repository has no tracked files\n' >&2
-     exit 1
-   fi
-
-   git archive --format=tar --output="${archive}" HEAD
-   gzip --force "${archive}"
-
-   bundle=${archive}.gz
-   read -r checksum _ < <(sha256sum "${bundle}")
-   read -r size _ < <(du --human-readable "${bundle}")
-
-   printf 'Packed %d files into %s (%s)\n' \
-     "${#tracked_files[@]}" "${bundle}" "${size}"
-   printf 'SHA-256: %s\n' "${checksum}"
-
-Bash remains excellent when a shell is the right abstraction. ``lincl`` earns
-its place when the workflow needs Python libraries, richer data structures,
-unit tests, concurrency, or structured recovery without wrapping every command
-in repetitive process-management code.
-
-Why not plain ``subprocess``?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The standard library is the foundation underneath lincl and is the right
-choice when you need complete low-level control. Here is the complete Python
-equivalent:
-
-.. code-block:: python
-
-   #!/usr/bin/env python3
-   import subprocess
-   from pathlib import Path
-
-   archive = Path("dist/source.tar")
-
-
-   def execute(*arguments):
-       return subprocess.run(
-           arguments,
-           check=True,
-           capture_output=True,
-           text=True,
-       )
-
-
-   archive.parent.mkdir(parents=True, exist_ok=True)
-   tracked_files = execute("git", "ls-files").stdout.splitlines()
-   if not tracked_files:
-       raise RuntimeError("the repository has no tracked files")
-
-   execute(
-       "git",
-       "archive",
-       "--format=tar",
-       f"--output={archive}",
-       "HEAD",
-   )
-   execute("gzip", "--force", str(archive))
-
-   bundle = archive.with_suffix(".tar.gz")
-   checksum = execute("sha256sum", str(bundle)).stdout.split()[0]
-   size = execute("du", "--human-readable", str(bundle)).stdout.split()[0]
-
-   print(f"Packed {len(tracked_files)} files into {bundle} ({size})")
-   print(f"SHA-256: {checksum}")
-
-With lincl, the command structure remains visible without repeating capture,
-decoding, exit checking, and error adaptation at every call site.
-
 Quick start
 -----------
 
@@ -417,6 +287,134 @@ Validate command names, options, paths, and input that come from users or
 external systems. Be especially careful with commands running as root:
 ``lincl`` does not bypass permissions, and it cannot protect you from a
 dangerous option accepted by the program you invoke.
+
+Appendix: a complete automation example
+---------------------------------------
+
+The following script packages the committed files in a Git repository,
+compresses the archive, calculates its checksum, and reports what it produced:
+
+.. code-block:: python
+
+   #!/usr/bin/env python3
+   from pathlib import Path
+
+   from lincl import du, git, gzip, sha256sum
+
+   archive = Path("dist/source.tar")
+   archive.parent.mkdir(parents=True, exist_ok=True)
+
+   tracked_files = git.ls_files().parser(str.splitlines)
+   if not tracked_files:
+       raise RuntimeError("the repository has no tracked files")
+
+   git.archive("HEAD", format="tar", output=archive)
+   gzip(archive, force=True)
+
+   bundle = archive.with_suffix(".tar.gz")
+   checksum = sha256sum(bundle).parser(lambda output: output.split()[0])
+   size = du(bundle, human_readable=True).parser(lambda output: output.split()[0])
+
+   print(f"Packed {len(tracked_files)} files into {bundle} ({size.value})")
+   print(f"SHA-256: {checksum.value}")
+
+The Python reads like the commands you would write by hand:
+
+.. code-block:: console
+
+   git ls-files
+   git archive --format=tar --output=dist/source.tar HEAD
+   gzip --force dist/source.tar
+   sha256sum dist/source.tar.gz
+   du --human-readable dist/source.tar.gz
+
+``git.ls_files`` and ``git.archive`` are ordinary Git subcommands, not special
+lincl integrations. Attribute chaining preserves their position in the
+argument vector, while keyword arguments become their options.
+
+The Bash equivalent
+~~~~~~~~~~~~~~~~~~~
+
+The Bash version is compact, but parsed output, quoting, and error reporting
+belong to the script:
+
+.. code-block:: bash
+
+   #!/usr/bin/env bash
+   set -euo pipefail
+
+   archive=dist/source.tar
+   mkdir -p "$(dirname "${archive}")"
+
+   mapfile -t tracked_files < <(git ls-files)
+   if (( ${#tracked_files[@]} == 0 )); then
+     printf 'the repository has no tracked files\n' >&2
+     exit 1
+   fi
+
+   git archive --format=tar --output="${archive}" HEAD
+   gzip --force "${archive}"
+
+   bundle=${archive}.gz
+   read -r checksum _ < <(sha256sum "${bundle}")
+   read -r size _ < <(du --human-readable "${bundle}")
+
+   printf 'Packed %d files into %s (%s)\n' \
+     "${#tracked_files[@]}" "${bundle}" "${size}"
+   printf 'SHA-256: %s\n' "${checksum}"
+
+Bash remains excellent when a shell is the right abstraction. ``lincl`` earns
+its place when the workflow needs Python libraries, richer data structures,
+unit tests, concurrency, or structured recovery without wrapping every command
+in repetitive process-management code.
+
+The ``subprocess`` equivalent
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The standard library is the foundation underneath lincl and is the right
+choice when you need complete low-level control:
+
+.. code-block:: python
+
+   #!/usr/bin/env python3
+   import subprocess
+   from pathlib import Path
+
+   archive = Path("dist/source.tar")
+
+
+   def execute(*arguments):
+       return subprocess.run(
+           arguments,
+           check=True,
+           capture_output=True,
+           text=True,
+       )
+
+
+   archive.parent.mkdir(parents=True, exist_ok=True)
+   tracked_files = execute("git", "ls-files").stdout.splitlines()
+   if not tracked_files:
+       raise RuntimeError("the repository has no tracked files")
+
+   execute(
+       "git",
+       "archive",
+       "--format=tar",
+       f"--output={archive}",
+       "HEAD",
+   )
+   execute("gzip", "--force", str(archive))
+
+   bundle = archive.with_suffix(".tar.gz")
+   checksum = execute("sha256sum", str(bundle)).stdout.split()[0]
+   size = execute("du", "--human-readable", str(bundle)).stdout.split()[0]
+
+   print(f"Packed {len(tracked_files)} files into {bundle} ({size})")
+   print(f"SHA-256: {checksum}")
+
+With lincl, the command structure remains visible without repeating capture,
+decoding, exit checking, and error adaptation at every call site.
 
 Getting help
 ------------
