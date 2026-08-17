@@ -7,7 +7,7 @@ flake8==7.3.0
 importlib-metadata==9.0.0
 pip-audit==2.10.1
 pip==26.2.1
-pip-tools==7.6.0
-pre-commit==4.6.1
+pip-tools==7.6.1
+pre-commit==4.6.2
 pytest==9.1.1
 twine==7.0.0

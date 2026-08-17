@@ -503,9 +503,9 @@ pip-requirements-parser==32.0.1 \
     --hash=sha256:4659bc2a667783e7a15d190f6fccf8b2486685b6dba4c19c3876314769c57526 \
     --hash=sha256:b4fa3a7a0be38243123cf9d1f3518da10c51bdb165a2b2985566247f9155a7d3
     # via pip-audit
-pip-tools==7.6.0 \
-    --hash=sha256:4bd99155b6d8de358a214b0865e1a2855a453570c1a83d40f7b564870b8657be \
-    --hash=sha256:c1c59f7844df4866fa9542d3f50d1f44be537ac0027cb50b2563d6a992853981
+pip-tools==7.6.1 \
+    --hash=sha256:6111c8b4b07fd14b7223ca921485b0e96cf66e20bf94da95eeed9845f510cb8f \
+    --hash=sha256:695556edeb647eb94ee8345cc7108657fdb7fb16b3876623a399b4f61bbede01
     # via -r requirements-dev.in
 platformdirs==4.11.1 \
     --hash=sha256:2efd27d363e8dd2e661639ffb398865a5e0a46442a11d266bf375a0e0c10e386 \
@@ -517,9 +517,9 @@ pluggy==1.6.0 \
     --hash=sha256:7dcc130b76258d33b90f61b658791dede3486c3e6bfb003ee5c9bfb396dd22f3 \
     --hash=sha256:e920276dd6813095e9377c0bc5566d94c932c33b27a3e3945d8389c374dd4746
     # via pytest
-pre-commit==4.6.1 \
-    --hash=sha256:03e809865c7d178b9979d06c761fcbfe6808fdaded8581a745bb110e52050421 \
-    --hash=sha256:0e3b2942510d1fb34eec167a3ec57331bf8442122f1153a9fb8b58f5c49b2717
+pre-commit==4.6.2 \
+    --hash=sha256:8f5d7bfb021ecdbcd9d49d89847082dd24172ccde534390081a679ad046e2441 \
+    --hash=sha256:e2dde9a75d3bce11bd3831c26d134df00a2803c1d818be6a0383c3dcda25dc4e
     # via -r requirements-dev.in
 py-serializable==2.1.0 \
     --hash=sha256:9d5db56154a867a9b897c0163b33a793c804c80cee984116d02d49e4578fc103 \
