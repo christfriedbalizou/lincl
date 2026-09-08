@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.0.3](https://github.com/christfriedbalizou/lincl/compare/v4.0.2...v4.0.3) (2026-09-08)
+
+
+### Bug Fixes
+
+* **ci:** align CodeQL action versions ([a460ec7](https://github.com/christfriedbalizou/lincl/commit/a460ec76e85baad158ed81b6d469c3d8f15a0ad7))
+
 ## [4.0.2](https://github.com/christfriedbalizou/lincl/compare/v4.0.1...v4.0.2) (2026-08-10)
 
 
