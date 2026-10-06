@@ -490,6 +490,7 @@ packaging==26.3 \
     #   pip-requirements-parser
     #   pytest
     #   twine
+    #   virtualenv
     #   wheel
 pip-api==0.0.34 \
     --hash=sha256:8b2d7d7c37f2447373aa2cf8b1f60a2f2b27a84e1e9e0294a3f6ef10eb3ba6bb \
@@ -558,9 +559,9 @@ pytest==9.1.1 \
     --hash=sha256:1088fbde8f2b49d95a549a195707afa7a76a3ce9bcadc26b6d71f0ffda5fe313 \
     --hash=sha256:37a86b45efb9a47a61a36449063e8e18d0cab3161329fc099eb21783169c4f0c
     # via -r requirements-dev.in
-python-discovery==1.5.1 \
-    --hash=sha256:ac07f44cade589d954e9d6a1e1468539fdddd2cf676beb51da73e0f156b7c932 \
-    --hash=sha256:e2ea8b884cd1701f386eda8cf327b87743f1dc21b7f784470799537d95635384
+python-discovery==1.6.1 \
+    --hash=sha256:cf87d3627dfb4412437fdd5b13eae402607722998d21567993aedbc59b23c15e \
+    --hash=sha256:d43fcdef879fe795352bd13ccf8d185ba5a9f86f36cfcd00529f596e737442b3
     # via virtualenv
 pyyaml==6.0.3 \
     --hash=sha256:00c4bdeba853cc34e7dd471f16b4114f4162dc03e6b7afcc2128711f0eca823c \
@@ -734,16 +735,16 @@ typing-extensions==4.16.0 \
     # via
     #   cyclonedx-python-lib
     #   exceptiongroup
-urllib3==2.7.0 \
-    --hash=sha256:231e0ec3b63ceb14667c67be60f2f2c40a518cb38b03af60abc813da26505f4c \
-    --hash=sha256:9fb4c81ebbb1ce9531cce37674bbc6f1360472bc18ca9a553ede278ef7276897
+urllib3==2.8.0 \
+    --hash=sha256:0cf3cae568d36aa9576b28dfb35f11328f1cb974ca7647d9475ebb86c75ac6e3 \
+    --hash=sha256:63bf2ead4c879426ebf22ef2a781eeb4aa3b4ae798a0435506f8687fd5bb9b63
     # via
     #   id
     #   requests
     #   twine
-virtualenv==21.7.3 \
-    --hash=sha256:26dfda3c34f29bf1a3ca167426a67658d59979b9954e705aef60a5f724ce1773 \
-    --hash=sha256:5e9e287f5c808070eea3b40403d3368248e64b24f1b60bd9a36e85ac841d2c3e
+virtualenv==21.14.5 \
+    --hash=sha256:b0651e0174982bba17cc6f0aaa2ef496730cb85a3f35eb5d1119d1c904f7d1da \
+    --hash=sha256:c4cb6c13e46b57225a999c7e22a09b163393878facc7ac4c059a57f46faa1647
     # via pre-commit
 wheel==0.47.0 \
     --hash=sha256:212281cab4dff978f6cedd499cd893e1f620791ca6ff7107cf270781e587eced \
