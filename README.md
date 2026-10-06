@@ -446,6 +446,10 @@ CI tests Python 3.10 through 3.14, exercises source installation on Debian,
 Ubuntu, and Rocky Linux, audits dependencies, runs CodeQL, and verifies both
 the wheel and source distribution.
 
+Dependabot groups all `github/codeql-action/*` updates in one PR. Keep the
+CodeQL initialization and analysis steps pinned to the same commit: mixed
+versions cannot read each other's analysis configuration.
+
 ## License
 
 `lincl` is available under the [MIT License].

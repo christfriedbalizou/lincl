@@ -35,6 +35,17 @@ def test_renovate_dispatch_uses_the_repository_app_and_tracks_the_run():
     assert 'case "${run_id}" in' in workflow
 
 
+def test_codeql_steps_use_the_same_pinned_version():
+    workflow = (ROOT / ".github/workflows/codeql.yml").read_text()
+    references = re.findall(
+        r"uses: github/codeql-action/[^@\s]+@([^\s]+)", workflow
+    )
+
+    assert len(references) >= 2
+    assert len(set(references)) == 1
+    assert re.fullmatch(r"[0-9a-f]{40}", references[0])
+
+
 @pytest.mark.parametrize(
     "filename, expected",
     [

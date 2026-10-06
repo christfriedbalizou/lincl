@@ -24,6 +24,10 @@ updates:
       time: "05:30"
       timezone: Etc/UTC
     open-pull-requests-limit: 10
+    groups:
+      codeql-actions:
+        patterns:
+          - "github/codeql-action/*"
     commit-message:
       prefix: chore
       include: scope
