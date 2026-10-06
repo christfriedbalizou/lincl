@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.0.4](https://github.com/christfriedbalizou/lincl/compare/v4.0.3...v4.0.4) (2026-10-06)
+
+
+### Bug Fixes
+
+* **deps:** resolve Renovate lockfiles and audit failures ([3893310](https://github.com/christfriedbalizou/lincl/commit/38933101b9663075816ae712a1c7284a59dfc8da))
+
 ## [4.0.3](https://github.com/christfriedbalizou/lincl/compare/v4.0.2...v4.0.3) (2026-09-08)
 
 
