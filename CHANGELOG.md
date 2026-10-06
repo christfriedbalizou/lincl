@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.0.5](https://github.com/christfriedbalizou/lincl/compare/v4.0.4...v4.0.5) (2026-10-06)
+
+
+### Bug Fixes
+
+* **ci:** keep CodeQL action updates in sync ([ef5f5bc](https://github.com/christfriedbalizou/lincl/commit/ef5f5bc63c43bccef88aab219487df3a900ddecc))
+
 ## [4.0.4](https://github.com/christfriedbalizou/lincl/compare/v4.0.3...v4.0.4) (2026-10-06)
 
 
