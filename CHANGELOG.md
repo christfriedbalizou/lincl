@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.1.0](https://github.com/christfriedbalizou/lincl/compare/v4.0.5...v4.1.0) (2026-10-12)
+
+
+### Features
+
+* **deps:** update dependency tomli ( 2.4.1 ➔ 2.5.0 ) ([#60](https://github.com/christfriedbalizou/lincl/issues/60)) ([5386f57](https://github.com/christfriedbalizou/lincl/commit/5386f57e8c2dd37d584c6596b724d8d578b27c09))
+
 ## [4.0.5](https://github.com/christfriedbalizou/lincl/compare/v4.0.4...v4.0.5) (2026-10-06)
 
 
