@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.1.1](https://github.com/christfriedbalizou/lincl/compare/v4.1.0...v4.1.1) (2026-10-15)
+
+
+### Documentation
+
+* **lincl:** consolidate project guidance and records ([c2dfe73](https://github.com/christfriedbalizou/lincl/commit/c2dfe732f837967cbd3581bf5424fe606f9d5a65))
+
 ## [4.1.0](https://github.com/christfriedbalizou/lincl/compare/v4.0.5...v4.1.0) (2026-10-12)
 
 
