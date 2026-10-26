@@ -8,6 +8,6 @@ importlib-metadata==9.0.1
 pip-audit==2.10.1
 pip==26.2.1
 pip-tools==7.6.2
-pre-commit==4.6.2
+pre-commit==4.7.0
 pytest==9.1.1
 twine==7.0.0
