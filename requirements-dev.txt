@@ -308,9 +308,9 @@ filelock==3.32.2 \
     #   cachecontrol
     #   python-discovery
     #   virtualenv
-flake8==7.4.1 \
-    --hash=sha256:78480274a6d7289d9cb8eafeda241fac57d4ea687d26e32dfdca37b72cdeddad \
-    --hash=sha256:84ea5afcaf344487b0ea5baaebb8100f4cfaebc01f755998f75876664029f587
+flake8==7.5.0 \
+    --hash=sha256:0dab7566341aca0d80aa29b5812bdadf256caa6a63e6068e49ac2649918236a4 \
+    --hash=sha256:637ea1a443a78ed6ee461725cdf71ca93bc5cde0abf25436dbebdc3880b4e078
     # via -r requirements-dev.in
 id==1.6.1 \
     --hash=sha256:d0732d624fb46fd4e7bc4e5152f00214450953b9e772c182c1c22964def1a069 \
@@ -324,9 +324,9 @@ idna==3.18 \
     --hash=sha256:7f952cbe720b688055e3f87de14f5c3e5fdaa8bc3928985c4077ca689de849a2 \
     --hash=sha256:ffb385a7e039654cef1ab9ef32c6fafe283c0c0467bba1d9029738ce4a14a848
     # via requests
-importlib-metadata==9.0.1 \
-    --hash=sha256:ab830580bc0ef3db61ce8fae716389e5462b67e033018bab6d8f80ef17172f99 \
-    --hash=sha256:bba5600596a7e21f3eef53281cf28d6a5195634d2f2b78ff9501a3272c6eaab0
+importlib-metadata==10.1.0 \
+    --hash=sha256:82b04047fa09792c1a8cfeddfe08bec79e4b13c29c8469b0d3949860f61017e8 \
+    --hash=sha256:cf45ce66a929c64e994185a809c04840d0501db17e663810d993d0f4829265c7
     # via -r requirements-dev.in
 iniconfig==2.3.0 \
     --hash=sha256:c76315c77db068650d49c5b56314774a7804df16fee4402c1f19d6d15d8c4730 \
@@ -518,9 +518,9 @@ pluggy==1.6.0 \
     --hash=sha256:7dcc130b76258d33b90f61b658791dede3486c3e6bfb003ee5c9bfb396dd22f3 \
     --hash=sha256:e920276dd6813095e9377c0bc5566d94c932c33b27a3e3945d8389c374dd4746
     # via pytest
-pre-commit==4.6.2 \
-    --hash=sha256:8f5d7bfb021ecdbcd9d49d89847082dd24172ccde534390081a679ad046e2441 \
-    --hash=sha256:e2dde9a75d3bce11bd3831c26d134df00a2803c1d818be6a0383c3dcda25dc4e
+pre-commit==4.7.0 \
+    --hash=sha256:1f3deee12b914c8fa184bd2b5953391c2e4f36763e403d4a23dc9983fa7c6e86 \
+    --hash=sha256:2e229038ad3656081b70c27913157e4b636ef306f643f024a8a8e3f0f7b2f877
     # via -r requirements-dev.in
 py-serializable==2.1.0 \
     --hash=sha256:9d5db56154a867a9b897c0163b33a793c804c80cee984116d02d49e4578fc103 \
@@ -534,9 +534,9 @@ pycparser==3.0 \
     --hash=sha256:600f49d217304a5902ac3c37e1281c9fe94e4d0489de643a9504c5cdfdfc6b29 \
     --hash=sha256:b727414169a36b7d524c1c3e31839a521725078d7b2ff038656844266160a992
     # via cffi
-pyflakes==4.0.0 \
-    --hash=sha256:0f7b7a78e8fcffd78b205200f045a70911f4179be1b42eac82c3323e0bf5c8aa \
-    --hash=sha256:492b27735181e3d4a6acfc08738948b666bf3e696781854ea6e0d8540d566d52
+pyflakes==4.1.0 \
+    --hash=sha256:592beb57058eb82eb190fb7514f2081c555c51000b029ff71286a681e6cf2f83 \
+    --hash=sha256:b2e05e6bac8e49b67be2a6ffa63422c60f7193fc72e8180255907b41ec997dc1
     # via flake8
 pygments==2.20.0 \
     --hash=sha256:6757cd03768053ff99f3039c1a36d6c0aa0b263438fcab17520b30a303a82b5f \
@@ -555,9 +555,9 @@ pyproject-hooks==1.2.0 \
     # via
     #   build
     #   pip-tools
-pytest==9.1.1 \
-    --hash=sha256:1088fbde8f2b49d95a549a195707afa7a76a3ce9bcadc26b6d71f0ffda5fe313 \
-    --hash=sha256:37a86b45efb9a47a61a36449063e8e18d0cab3161329fc099eb21783169c4f0c
+pytest==9.2.0 \
+    --hash=sha256:07acdcf88ec174f907dc01af70bf52d49b014bbab03faeeade31c96b18c2e588 \
+    --hash=sha256:97c4f3b1f3c7414aa36465e09b8220f1d03627993bd51b1282e193753c80557b
     # via -r requirements-dev.in
 python-discovery==1.6.1 \
     --hash=sha256:cf87d3627dfb4412437fdd5b13eae402607722998d21567993aedbc59b23c15e \
@@ -756,9 +756,9 @@ zipp==4.1.0 \
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-pip==26.2.1 \
-    --hash=sha256:71138adf1f4ca900cdb7d289c21b7494329f2332b6d85f0e1c42108c0384ed3e \
-    --hash=sha256:f6ad667e89a1fe78046c8f13232b247200f5258d7828f3f7883d660878e0813f
+pip==26.2.2 \
+    --hash=sha256:3a8e5c800492787f33a4114ef54444546c340df428974ebba17e0fd47e11af2f \
+    --hash=sha256:fd7f4dfa8190e014013b9f08f3e973f4e4c26ffd179a204895533a7254813a70
     # via
     #   -r requirements-dev.in
     #   pip-api
