@@ -423,23 +423,25 @@ make test
 make check-dist
 ```
 
-Runtime dependencies belong in `requirements.in`; development and test
-dependencies belong in `requirements-dev.in`. Run `make upgrade-reqs` to
-rebuild both hashed lockfiles after changing either input file.
+Runtime dependencies belong in `requirements.in` and development tools in
+`requirements-dev.in`. The CI test matrix installs only `requirements-test.in`,
+which stays installable on every supported Python version even when a
+development tool needs a newer interpreter. Run `make upgrade-reqs` to rebuild
+the hashed lockfiles after changing any input file.
 
 Renovate uses its `pip-compile` manager to update the input files and resolve
 compatible dependencies with fresh hashes. Do not enable its standalone
 `pip_requirements` manager for these generated lockfiles: changing a transitive
 pin alone can violate another package's requirements. Compilation uses the
-Python version recorded in each lockfile header (3.10 for runtime dependencies,
-3.12 for development tools). Lockfile maintenance refreshes transitive
-dependencies through the resolver.
+Python version recorded in each lockfile header (3.10 for test dependencies,
+3.12 for runtime dependencies and development tools). Lockfile maintenance
+refreshes transitive dependencies through the resolver.
 
 When the dependency audit blocks multiple update PRs, update all affected
 packages together with `pip-compile --allow-unsafe --generate-hashes
 --no-emit-index-url --upgrade-package PACKAGE==FIXED_VERSION
 requirements-dev.in`, repeating `--upgrade-package` as needed. Run the full
-checks and `pip-audit --require-hashes -r requirements-dev.txt`, then rebase
+checks and `pip-audit --require-hashes -r` on each lockfile, then rebase
 the outstanding PRs after the fixes reach `main`. Keep the audit enabled.
 
 CI tests Python 3.10 through 3.14, exercises source installation on Debian,
