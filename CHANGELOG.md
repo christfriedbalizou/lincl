@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.1.2](https://github.com/christfriedbalizou/lincl/compare/v4.1.1...v4.1.2) (2026-11-28)
+
+
+### Documentation
+
+* describe the separate test lockfile ([3420343](https://github.com/christfriedbalizou/lincl/commit/342034329359232fb2c77790e8a3bf6004e820ff))
+
 ## [4.1.1](https://github.com/christfriedbalizou/lincl/compare/v4.1.0...v4.1.1) (2026-10-15)
 
 
