@@ -9,6 +9,8 @@ on:
       - requirements.txt
       - requirements-dev.in
       - requirements-dev.txt
+      - requirements-test.in
+      - requirements-test.txt
       - README.md
       - setup.cfg
       - setup.py

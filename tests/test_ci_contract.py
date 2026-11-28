@@ -51,8 +51,10 @@ def test_codeql_steps_use_the_same_pinned_version():
     [
         ("requirements.txt", True),
         ("requirements-dev.txt", True),
+        ("requirements-test.txt", True),
         ("requirements.in", False),
         ("requirements-dev.in", False),
+        ("requirements-test.in", False),
         ("other-requirements.txt", False),
     ],
 )

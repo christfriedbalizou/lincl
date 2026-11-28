@@ -23,6 +23,7 @@ check-dist: build
 upgrade-reqs:
 	pip-compile --allow-unsafe --generate-hashes --no-emit-index-url requirements.in
 	pip-compile --allow-unsafe --generate-hashes --no-emit-index-url requirements-dev.in
+	pip-compile --allow-unsafe --generate-hashes --no-emit-index-url requirements-test.in
 
 clean:
 	rm -rf build dist

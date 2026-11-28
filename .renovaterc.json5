@@ -3,7 +3,7 @@
   "extends": ["github>christfriedbalizou/renovate"],
   "dependencyDashboardTitle": "Renovate Dashboard 🤖",
   "pip-compile": {
-    "managerFilePatterns": ["/^requirements(?:-dev)?\\.txt$/"]
+    "managerFilePatterns": ["/^requirements(?:-dev|-test)?\\.txt$/"]
   },
   "pip_requirements": {
     "enabled": false
